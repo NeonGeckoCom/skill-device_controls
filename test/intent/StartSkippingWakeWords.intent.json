@@ -1,0 +1,8 @@
+{
+  "utterance": "start skipping wake words",
+  "intent_type": "StartSkippingWakeWords",
+  "intent": {
+    "skip_ww_start": "start skipping",
+    "ww": "wake words"
+}
+}

@@ -1,0 +1,7 @@
+{
+  "utterance": "update my device",
+  "intent_type": "updateNeon",
+  "intent": {
+    "update_neon": "update my device"
+}
+}
