@@ -149,7 +149,7 @@ class DeviceControlCenterSkill(MycroftSkill):
         """
         LOG.debug("Prompting Demo!")
         self.make_active()
-        self.await_confirmation("local", "startDemoPrompt")
+        self.await_confirmation("local", "startDemoPrompt", 15)
         self.speak("Would you like me to show you the demo of my abilities?",
                    expect_response=True, private=True)
         # self.local_config.update_yaml_file("prefFlags", "showDemo", False, final=True)
@@ -447,6 +447,8 @@ class DeviceControlCenterSkill(MycroftSkill):
         user = self.get_utterance_user(message)
         LOG.debug(f"check: {utterances}")
         LOG.debug(self.actions_to_confirm)
+        if not utterances:
+            return False
         if user in self.actions_to_confirm.keys():
             result = self.check_yes_no_response(message)
             LOG.debug(result)
