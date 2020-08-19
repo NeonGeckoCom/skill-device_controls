@@ -144,12 +144,11 @@ class DeviceControlCenterSkill(MycroftSkill):
     def _show_demo_prompt(self, message):
         """
         Handles first run demo prompt
-        :param message:
-        :return:
+        :param message: message object associated with loaded emit
         """
         LOG.debug("Prompting Demo!")
         self.make_active()
-        self.await_confirmation("local", "startDemoPrompt", 15)
+        self.await_confirmation("local", "startDemoPrompt", 600)
         self.speak("Would you like me to show you the demo of my abilities?",
                    expect_response=True, private=True)
         # self.local_config.update_yaml_file("prefFlags", "showDemo", False, final=True)
