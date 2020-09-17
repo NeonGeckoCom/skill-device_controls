@@ -277,10 +277,17 @@ class DeviceControlCenterSkill(MycroftSkill):
                         self.await_confirmation(user, "initiateUpdate")
 
                     else:
-                        result = subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
-                                                  + "/functions.sh; checkRelease"])
+                        # result =
+                        # subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                        #                           + "/functions.sh; checkRelease"])
+                        resp = self.bus.wait_for_response(Message("neon.client.check_release"))
+                        version_file = glob.glob(f'{self.configuration_available["dirVars"]["ngiDir"]}/*.release')[0]
+                        version = os.path.splitext(os.path.basename(version_file))[0]  # 2009.0
+                        major, minor = version.split('.')
+                        new_major = resp.data.get("version_major", 0)
+                        new_minor = resp.data.get("version_minor", 0)
                         # LOG.debug(str(result))
-                        if result == 0:
+                        if new_major > major or (new_major == major and new_minor > minor):
                             # Server Reported Release Different than Install
                             self.speak("There is a new release available from Neon Gecko. "
                                        "Please pull changes on GitHub.", private=True)
