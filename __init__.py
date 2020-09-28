@@ -19,6 +19,8 @@
 
 import datetime
 import time
+
+import git
 from requests import HTTPError
 from adapt.intent import IntentBuilder
 from random import randint
@@ -257,15 +259,19 @@ class DeviceControlCenterSkill(MycroftSkill):
                 self.clear_signals("DCC")
                 if self.check_for_signal('CORE_useHesitation', -1):
                     self.speak("Understood. Give me a moment to check for available updates.", private=True)
-                os.system(f"sudo {self.configuration_available['dirVars']['ngiDir']}/update.sh -v")
+                # os.system(f"sudo {self.configuration_available['dirVars']['ngiDir']}/update.sh -v")
                 # | "
                 # f"tee -a {self.configuration_available['dirVars']['logsDir']}/update.log")
                 current_version = self.configuration_available["devVars"]["version"]
-                os.chdir(self.configuration_available["dirVars"]["tempDir"])
+                # os.chdir(self.configuration_available["dirVars"]["tempDir"])
 
                 try:
-                    new_version = os.path.splitext(glob.glob('*.version')[0])[0]
-                    os.remove(str(glob.glob('*.version')[0]))
+                    new_version = git.Git(self.configuration_available["dirVars"]["coreDir"]).log(
+                        "-1", "--format=%ai",
+                        f'origin/{self.configuration_available["remoteVars"]["coreBranch"]}').split(" ")[0]
+                    LOG.info(f"New Version={new_version}")
+                    # new_version = os.path.splitext(glob.glob('*.version')[0])[0]
+                    # os.remove(str(glob.glob('*.version')[0]))
                     # self.enable_intent('confirm_yes')
                     # self.enable_intent('confirm_no')
                     # self.create_signal("DCC_initiateUpdate")
@@ -275,8 +281,8 @@ class DeviceControlCenterSkill(MycroftSkill):
                         self.speak("The most recent version is " + str(new_version) +
                                    "; would you like to install it now?", True, private=True)
                         self.await_confirmation(user, "initiateUpdate")
-
                     else:
+                        # Check Release version (get Production version and compare to local)
                         # result =
                         # subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
                         #                           + "/functions.sh; checkRelease"])
