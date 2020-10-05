@@ -1,4 +1,4 @@
-# ![](https://0000.us/klatchat/app/files/neon_images/icons/neon_paw.png)device-control-center
+# ![](https://0000.us/klatchat/app/files/neon_images/icons/neon_paw.png)Device Control Center
 
 # Summary
 
@@ -35,12 +35,20 @@ Device Control skill is the “brain” behind customization and control of Neon
 
 # How to Use
 
-FIrst, make your request. Say `“Hey Neon”` if you are in the wake words mode. Then say your desired command. Use the following list as a reference:
+First, make your request. Say `“Hey Neon”` if you are in the wake words mode. Then say your desired command. Use the following list as a reference:
 
- ## Change dialog mode
+- "Change your dialog mode to (random/default)"
+- clear my user (profile/transcripts/likes/media/preferences/languages)"
+- "(skip/require) wake words"
+- "(enable/disable) (blink/clap) commands"
+- "I want you to (exit/shutdown)"
+- "show me the demo"
+- "check for updates"
 
-    I want you to begin {dialogmode} (dialog|dialogue) mode  
-    Change your (dialog|dialogue) mode to {dialogmode}
+## Change dialog mode
+
+I want you to begin {dialogmode} (dialog|dialogue) mode  
+Change your (dialog|dialogue) mode to {dialogmode}
 
   
 
