@@ -130,6 +130,8 @@ class DeviceControlCenterSkill(MycroftSkill):
         # When first run or demo prompt not dismissed, wait for load and prompt user
         if self.configuration_available["prefFlags"]["showDemo"] and not self.server:
             self.bus.once('mycroft.ready', self._show_demo_prompt)
+        elif self.configuration_available["prefFlags"]["notifyRelease"] and not self.server:
+            self.bus.once('mycroft.ready', self._check_release)
 
     def _show_demo_prompt(self, message):
         """
@@ -142,6 +144,27 @@ class DeviceControlCenterSkill(MycroftSkill):
         self.speak("Would you like me to show you the demo of my abilities?",
                    expect_response=True, private=True)
         # self.local_config.update_yaml_file("prefFlags", "showDemo", False, final=True)
+
+    def _check_release(self, message):
+        """
+        Handles checking for a new release version
+        :param message: message object associated with loaded emit
+        """
+        LOG.debug("Checking release!")
+        resp = self.bus.wait_for_response(Message("neon.client.check_release"))
+        version_file = glob.glob(f'{self.configuration_available["dirVars"]["ngiDir"]}/*.release')[0]
+        version = os.path.splitext(os.path.basename(version_file))[0]  # 2009.0
+        major, minor = version.split('.')
+        new_major = resp.data.get("version_major", 0)
+        new_minor = resp.data.get("version_minor", 0)
+        # LOG.debug(str(result))
+        if new_major > major or (new_major == major and new_minor > minor):
+            # Server Reported Release Different than Install
+            self.speak("There is a new release available from Neon Gecko. "
+                       "Please pull changes on GitHub.", private=True, message=message)
+            return True
+        else:
+            return False
 
     def handle_start_skipping(self, message):
         """
@@ -256,7 +279,10 @@ class DeviceControlCenterSkill(MycroftSkill):
                 try:
                     new_version = git.Git(self.configuration_available["dirVars"]["coreDir"]).log(
                         "-1", "--format=%ai",
-                        f'origin/{self.configuration_available["remoteVars"]["coreBranch"]}').split(" ")[0]
+                        f'origin/{self.configuration_available["remoteVars"]["coreBranch"]}')
+                    new_date, new_time, _ = new_version.split(" ", 2)
+                    new_time = new_time.replace(":", "")
+                    new_version = f"{new_date}--{new_time}"
                     LOG.info(f"New Version={new_version}")
                     # new_version = os.path.splitext(glob.glob('*.version')[0])[0]
                     # os.remove(str(glob.glob('*.version')[0]))
@@ -270,22 +296,23 @@ class DeviceControlCenterSkill(MycroftSkill):
                                    "; would you like to install it now?", True, private=True)
                         self.await_confirmation(user, "initiateUpdate")
                     else:
-                        # Check Release version (get Production version and compare to local)
-                        # result =
-                        # subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
-                        #                           + "/functions.sh; checkRelease"])
-                        resp = self.bus.wait_for_response(Message("neon.client.check_release"))
-                        version_file = glob.glob(f'{self.configuration_available["dirVars"]["ngiDir"]}/*.release')[0]
-                        version = os.path.splitext(os.path.basename(version_file))[0]  # 2009.0
-                        major, minor = version.split('.')
-                        new_major = resp.data.get("version_major", 0)
-                        new_minor = resp.data.get("version_minor", 0)
-                        # LOG.debug(str(result))
-                        if new_major > major or (new_major == major and new_minor > minor):
-                            # Server Reported Release Different than Install
-                            self.speak("There is a new release available from Neon Gecko. "
-                                       "Please pull changes on GitHub.", private=True)
-                        else:
+                        if not self._check_release(message):
+                        # # Check Release version (get Production version and compare to local)
+                        # # result =
+                        # # subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                        # #                           + "/functions.sh; checkRelease"])
+                        # resp = self.bus.wait_for_response(Message("neon.client.check_release"))
+                        # version_file = glob.glob(f'{self.configuration_available["dirVars"]["ngiDir"]}/*.release')[0]
+                        # version = os.path.splitext(os.path.basename(version_file))[0]  # 2009.0
+                        # major, minor = version.split('.')
+                        # new_major = resp.data.get("version_major", 0)
+                        # new_minor = resp.data.get("version_minor", 0)
+                        # # LOG.debug(str(result))
+                        # if new_major > major or (new_major == major and new_minor > minor):
+                        #     # Server Reported Release Different than Install
+                        #     self.speak("There is a new release available from Neon Gecko. "
+                        #                "Please pull changes on GitHub.", private=True)
+                        # else:
                             self.speak("I am already up to date, would you like to run the update anyway?",
                                        private=True)
                             self.await_confirmation(user, "initiateUpdate")
