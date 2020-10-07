@@ -123,18 +123,6 @@ class DeviceControlCenterSkill(MycroftSkill):
             stop_solo_intent = IntentBuilder("stop_solo_mode").optionally("neon").require("stop")\
                 .require("solo").build()
             self.register_intent(stop_solo_intent, self.handle_stop_skipping)
-        # if self.configuration_available["prefFlags"]["devMode"]:
-        #     LOG.info("In dev mode")
-        #     # self.register_intent_file("dev_skip_ww_start.intent", self.handle_start_skipping)
-        #     self.register_intent_file("dev_skip_ww_finish.intent", self.handle_stop_skipping)
-        # else:
-        #     self.register_intent_file("skip_ww_start.intent", self.handle_start_skipping)
-        #     self.register_intent_file("skip_ww_finish.intent", self.handle_stop_skipping)
-
-        # self.disable_intent('confirm_yes')
-        # self.disable_intent('confirm_no')
-        # self.disable_intent('confirm_numeric_intent')
-        # self.disable_intent('confirm_numeric.intent')
 
         # name intent and build it:
         self.register_intent_file("change_dialog.intent", self.handle_change_dialog_option)
