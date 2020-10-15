@@ -51,10 +51,8 @@ class DeviceControlCenterSkill(MycroftSkill):
     """
 
     def __init__(self):
-        # name the new class:
-        super(DeviceControlCenterSkill, self) \
-            .__init__(name="DeviceControlCenterSkill")
-        self.create_signal("CORE_startedSkillLoad")
+        super(DeviceControlCenterSkill, self).__init__(name="DeviceControlCenterSkill")
+        # self.create_signal("CORE_startedSkillLoad")
         # self.confirm_number = randint(100, 999)
         # self.options_erase = ["transcript", "like", "brand", "transcripts", "likes", "brands", "selected", "ignored",
         #                       "transcriptions", "transcription", "media", "pictures and videos", "preferences",
