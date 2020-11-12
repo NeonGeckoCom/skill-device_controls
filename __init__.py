@@ -17,27 +17,19 @@
 # US Patents 2008-2020: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
 # China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
 
-import datetime
+# import datetime
 import time
-
 import git
+import glob
+import os
+
 from requests import HTTPError
 from adapt.intent import IntentBuilder
 from random import randint
 from mycroft.skills.core import MycroftSkill
-# from mycroft.util import (
-#     create_signal,
-#     check_for_signal
-# )
 from mycroft.messagebus.message import Message
 import subprocess
-# from NGI import NGI_ROOT_PATH
 from mycroft.util.log import LOG
-# from mycroft.device import device
-import glob
-import os
-
-GLOB_DATE = str(datetime.date.today())
 
 
 class DeviceControlCenterSkill(MycroftSkill):
@@ -171,7 +163,6 @@ class DeviceControlCenterSkill(MycroftSkill):
         """
         if self.neon_in_request(message):
             user = self.get_utterance_user(message)
-            self.check_for_signal("Intent_overwrite_req")  # TODO: Depreciated? DM
             if not self.check_for_signal("CORE_skipWakeWord", -1):
                 self.clear_signals("DCC")
                 # self.enable_intent('confirm_yes')
@@ -295,22 +286,6 @@ class DeviceControlCenterSkill(MycroftSkill):
                         self.await_confirmation(user, "initiateUpdate")
                     else:
                         if not self._check_release(message):
-                        # # Check Release version (get Production version and compare to local)
-                        # # result =
-                        # # subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
-                        # #                           + "/functions.sh; checkRelease"])
-                        # resp = self.bus.wait_for_response(Message("neon.client.check_release"))
-                        # version_file = glob.glob(f'{self.configuration_available["dirVars"]["ngiDir"]}/*.release')[0]
-                        # version = os.path.splitext(os.path.basename(version_file))[0]  # 2009.0
-                        # major, minor = version.split('.')
-                        # new_major = resp.data.get("version_major", 0)
-                        # new_minor = resp.data.get("version_minor", 0)
-                        # # LOG.debug(str(result))
-                        # if new_major > major or (new_major == major and new_minor > minor):
-                        #     # Server Reported Release Different than Install
-                        #     self.speak("There is a new release available from Neon Gecko. "
-                        #                "Please pull changes on GitHub.", private=True)
-                        # else:
                             self.speak("I am already up to date, would you like to run the update anyway?",
                                        private=True)
                             self.await_confirmation(user, "initiateUpdate")
@@ -484,17 +459,16 @@ class DeviceControlCenterSkill(MycroftSkill):
                 # Response declined
                 actions_requested = self.actions_to_confirm.pop(user)
                 if "demoNextTime" in actions_requested:
-                    self.speak("If you want to see the demo in the future, say \"Neon, show me the demo\".",
-                               private=True)  # TODO: Move to dialog file
+                    self.speak_dialog("DemoNextTime", private=True)
                     self.local_config.update_yaml_file("prefFlags", "showDemo", False, final=True)
 
                 elif "startDemoPrompt" in actions_requested:
                     self.await_confirmation(user, "demoNextTime")
                     self.speak("Should I ask you next time?", True, private=True)
                 elif any(opt in actions_requested for opt in ("shutdownNow", "exitNow")):
-                    self.speak("Glad to stay with you", private=True)  # TODO: Move to dialog file
+                    self.speak_dialog("CancelExit", private=True)
                 else:  # No follow-up questions
-                    self.speak("Okay. Not doing anything.", False, private=True)  # TODO: Move to dialog file
+                    self.speak_dialog("NotDoingAnything", private=True)
                 return True
             elif result:
                 # Response confirmed (Either boolean True or string confirmation numbers
@@ -942,7 +916,6 @@ def create_skill():
 #                     # Neon.clear_data(['u'])
 #                     subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
 #                                      + "/functions.sh; refreshNeon -u"])
-#                     # TODO: Check This
 #
 #             if self.check_for_signal(f"{prefix}_eraseCache"):
 #                 # Neon.clear_data(['c'])
@@ -972,7 +945,6 @@ def create_skill():
 #                 else:
 #                     subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
 #                                      + "/functions.sh; refreshNeon -r"])
-#                     # TODO: Check This
 #                 self.speak("Resetting all interface preferences.", private=True)
 #
 #             if self.check_for_signal(f"{prefix}_eraseMedia"):
