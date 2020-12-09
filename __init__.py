@@ -90,9 +90,9 @@ class DeviceControlCenterSkill(MycroftSkill):
             optionally("neon").build()
         self.register_intent(clear_data_intent, self.handle_data_erase)
 
-        exit_shutdown_intent = IntentBuilder("exit_shutdown_intent").require("RequestKeyword").require("Exit").\
-            optionally("neon").build()
-        self.register_intent(exit_shutdown_intent, self.handle_exit_intent)
+        exit_shutdown_intent = IntentBuilder("exit_shutdown_intent").require("RequestKeyword")\
+            .one_of("Exit", "shutdown").optionally("neon").build()
+        self.register_intent(exit_shutdown_intent, self.handle_exit_shutdown_intent)
         # self.register_intent_file("exit_shutdown.intent", self.handle_exit_intent)
 
         # confirm_numeric_intent = IntentBuilder("confirm_numeric_intent").require("ConfirmKeyword").build()
@@ -310,14 +310,18 @@ class DeviceControlCenterSkill(MycroftSkill):
         # if (self.check_for_signal("skip_wake_word", -1) and message.data.get("Neon")) \
         #         or not self.check_for_signal("skip_wake_word", -1) or self.check_for_signal("CORE_neonInUtterance"):
         if self.neon_in_request(message):
-            if not self.server:
+            if self.request_from_mobile(message):
+                pass
+            elif self.server:
+                pass
+            else:
                 if self.check_for_signal('CORE_useHesitation', -1):
                     self.speak("Here you go", private=True)
                 # import os
                 os.chdir(self.configuration_available["dirVars"]["ngiDir"])
                 os.system('gnome-terminal -- shortcuts/demoNeon.sh')
 
-    def handle_exit_intent(self, message):
+    def handle_exit_shutdown_intent(self, message):
         """
         Handles a request to exit or shutdown. This action will be confirmed numerically before executing
         :param message: message object associated with request
@@ -326,19 +330,23 @@ class DeviceControlCenterSkill(MycroftSkill):
         if not self.server:
             self.clear_signals("DCC")
             confirm_number = randint(100, 999)
-            LOG.info("Hear you")
-            # TODO: Update vocab to separate exit/shutdown words DM
-            if message.data.get("Exit") == "exit":
-                self.speak("Are you sure that you wish to stop me from running?", private=True)
+            # LOG.info("Hear you")
+            if message.data.get("Exit"):
+                action = "stop me from running"
+                # self.speak("Are you sure that you wish to stop me from running?", private=True)
                 # self.create_signal("DCC_exitNow")
                 self.await_confirmation(user, f"exitNow_{confirm_number}")
-            else:
-                self.speak("Are you sure that you wish to initiate full shutdown?", private=True)
+            elif message.data.get("shutdown"):
+                action = "initiate full shutdown"
+                # self.speak("Are you sure that you wish to initiate full shutdown?", private=True)
                 # self.create_signal("DCC_shutdownNow")
                 self.await_confirmation(user, f"shutdownNow_{confirm_number}")
+            else:
+                LOG.error("No exit or shutdown keyword! This shouldn't be possible")
+                return
 
-            self.speak("If so, please say 'go ahead " + str(confirm_number) +
-                       "' to proceed or say 'nevermind' to cancel.", True, private=True)
+            self.speak_dialog("ConfirmExitShutdown", {"action": action, "number": str(confirm_number)},
+                              expect_response=True, private=True, wait=True)
             # self.enable_intent('confirm_no')
             # self.enable_intent('confirm_numeric_intent')
             # self.enable_intent('confirm_numeric.intent')
