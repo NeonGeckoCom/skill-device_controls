@@ -1,14 +1,14 @@
-# ![](https://0000.us/klatchat/app/files/neon_images/icons/neon_paw.png)Device Control Center
+# <img src='https://0000.us/klatchat/app/files/neon_images/icons/neon_skill.png' card_color="#FF8600" width="50" style="vertical-align:bottom">Device Control Center
 
-# Summary
+## Summary
 
 Primary core device skill responsible for handling multiple system commands.
 
-# Requirements
+## Requirements
 
 No special required packages for this skill.
 
-# Description
+## Description
 
 Device Control skill is the primary and one of the most important and complex skills for Neon’s internal controls. It goes hand-in-hand with Neon’s User Settings Control skill. Those two skills provide similar functionality but are separated logically.
 
@@ -33,7 +33,7 @@ Device Control skill is the “brain” behind customization and control of Neon
 
   
 
-# How to Use
+## Examples
 
 First, make your request. Say `“Hey Neon”` if you are in the wake words mode. Then say your desired command. Use the following list as a reference:
 
@@ -194,11 +194,11 @@ Most likely, Neon will ask for the confirmation to most of the choices available
 
 Wait for the successful confirmation or action execution from Neon. Most commands should be instantaneous.
 
-# Location
+## Location
 
     ${skills}/device-control-center.neon
 
-# Files
+## Files
 <details>
 <summary>Click to expand.</summary>
 <br>
@@ -235,11 +235,11 @@ Wait for the successful confirmation or action execution from Neon. Most command
     ${skills}/device-control-center.neon/README.md
 </details>
 
-# Class Diagram
+## Class Diagram
 
 [Click Here](https://0000.us/klatchat/app/files/neon_images/class_diagrams/device-control-center.png)
 
-# Available Intents
+## Available Intents
 <details>
 <summary>Click to expand.</summary>
 <br>
@@ -431,7 +431,7 @@ Wait for the successful confirmation or action execution from Neon. Most command
 
  </details>
 
-# Examples
+## Details
 
 ### Text
 
@@ -455,7 +455,7 @@ Please refer to [How to Use](how-to-use) for more information.
 
   
 
-# Troubleshooting
+## Troubleshooting
 
 This skill is fairly complex in terms of the intents. If the skill is not loading for any reason [contact us](contact-us) - device-control is the primary skill and not much else will be able to function without it.
 
@@ -463,11 +463,11 @@ If you have a problem with false-positives for clearing data intent, please [sub
 
   
 
-# Contact Support
+## Contact Support
 
 Use the [link](https://neongecko.com/ContactUs) or [submit an issue on GitHub](https://help.github.com/en/articles/creating-an-issue)
 
-# Credits
+## Credits
 
 reginaneon [neongeckocom](https://neongecko.com/)
 
