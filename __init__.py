@@ -271,7 +271,7 @@ class DeviceControlCenterSkill(MycroftSkill):
                         f'origin/{self.configuration_available["remoteVars"]["coreBranch"]}')
                     new_date, new_time, _ = new_version.split(" ", 2)
                     new_time = new_time.replace(":", "")
-                    new_version = f"{new_date}--{new_time}"
+                    new_version = f"{new_date}-{new_time}"
                     LOG.info(f"New Version={new_version}")
                     # new_version = os.path.splitext(glob.glob('*.version')[0])[0]
                     # os.remove(str(glob.glob('*.version')[0]))
