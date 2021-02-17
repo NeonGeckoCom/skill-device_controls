@@ -451,7 +451,8 @@ class DeviceControlCenterSkill(MycroftSkill):
             #     LOG.info("Nothing said")
             #     self.handle_confirm_no(message)
 
-    def converse(self, utterances, lang="en-us", message=None):
+    def converse(self, message=None):
+        utterances = message.data.get("utterances")
         user = self.get_utterance_user(message)
         LOG.debug(f"check: {utterances}")
         LOG.debug(self.actions_to_confirm)
