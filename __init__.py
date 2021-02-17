@@ -590,8 +590,9 @@ class DeviceControlCenterSkill(MycroftSkill):
                                 user_dict["speed_multiplier"] = 1.0
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -A " + user_dict["username"]])
-                                if message.context["mobile"]:
-                                    self.socket_io_emit('clear_data', "&kind=all", message.context["flac_filename"])
+                                if self.request_from_mobile(message):
+                                    self.mobile_skill_intent("clear_data", {"kind": "all"}, message)
+                                    # self.socket_io_emit('clear_data', "&kind=all", message.context["flac_filename"])
                                 else:
                                     self.socket_io_emit(event="clear cookies intent",
                                                         flac_filename=message.context["flac_filename"])
@@ -644,9 +645,10 @@ class DeviceControlCenterSkill(MycroftSkill):
                             if self.server:
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -T " + user_dict["username"]])
-                                if message.context["mobile"]:
-                                    self.socket_io_emit('clear_data', "&kind=transcripts",
-                                                        message.context["flac_filename"])
+                                if self.request_from_mobile(message):
+                                    self.mobile_skill_intent("clear_data", {"kind": "transcripts"}, message)
+                                    # self.socket_io_emit('clear_data', "&kind=transcripts",
+                                    #                     message.context["flac_filename"])
                             else:
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -t"])
@@ -677,8 +679,9 @@ class DeviceControlCenterSkill(MycroftSkill):
                                                  + "/functions.sh; refreshNeon -c"])
                             else:
                                 LOG.debug("Clear Caches")
-                                if message.context["mobile"]:
-                                    self.socket_io_emit('clear_data', "&kind=cache", message.context["flac_filename"])
+                                if self.request_from_mobile(message):
+                                    self.mobile_skill_intent("clear_data", {"kind": "cache"}, message)
+                                    # self.socket_io_emit('clear_data', "&kind=cache", message.context["flac_filename"])
                                 else:
                                     self.socket_io_emit(event="clear cookies intent",
                                                         kind=message.context["flac_filename"])
@@ -704,8 +707,9 @@ class DeviceControlCenterSkill(MycroftSkill):
                         if f"eraseMedia_{confrimed_num}" in actions_requested:
                             # Neon.clear_data(['p'])
                             if self.server:
-                                if message.context["mobile"]:
-                                    self.socket_io_emit('clear_data', "&kind=media", message.context["flac_filename"])
+                                if self.request_from_mobile(message):
+                                    self.mobile_skill_intent("clear_data", {"kind": "media"}, message)
+                                    # self.socket_io_emit('clear_data', "&kind=media", message.context["flac_filename"])
                                 else:
                                     pass
                             else:
