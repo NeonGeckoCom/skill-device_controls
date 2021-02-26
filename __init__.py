@@ -595,8 +595,10 @@ class DeviceControlCenterSkill(MycroftSkill):
                                     self.mobile_skill_intent("clear_data", {"kind": "all"}, message)
                                     # self.socket_io_emit('clear_data', "&kind=all", message.context["flac_filename"])
                                 else:
-                                    self.socket_io_emit(event="clear cookies intent",
-                                                        flac_filename=message.context["flac_filename"])
+                                    self.socket_emit_to_server("clear cookies intent",
+                                                               [message.context["klat_data"]["request_id"]])
+                                    # self.socket_io_emit(event="clear cookies intent",
+                                    #                     flac_filename=message.context["flac_filename"])
 
                             # Neon.clear_data(['a'])
 
@@ -684,8 +686,10 @@ class DeviceControlCenterSkill(MycroftSkill):
                                     self.mobile_skill_intent("clear_data", {"kind": "cache"}, message)
                                     # self.socket_io_emit('clear_data', "&kind=cache", message.context["flac_filename"])
                                 else:
-                                    self.socket_io_emit(event="clear cookies intent",
-                                                        kind=message.context["flac_filename"])
+                                    self.socket_emit_to_server("clear cookies intent",
+                                                               [message.context["klat_data"]["request_id"]])
+                                    # self.socket_io_emit(event="clear cookies intent",
+                                    #                     kind=message.context["flac_filename"])
 
                         if f"erasePrefs_{confrimed_num}" in actions_requested:
                             LOG.info(">>> Clear Preferences")
@@ -739,9 +743,11 @@ class DeviceControlCenterSkill(MycroftSkill):
 
                         LOG.debug("DM: Clear Data Confirmed")
                         if self.server:
-                            flac_filename = message.context["flac_filename"]
-                            self.socket_io_emit(event="update profile", kind="skill",
-                                                flac_filename=flac_filename, message=user_dict)
+                            self.socket_emit_to_server("update profile", ["skill", user_dict,
+                                                                          message.context["klat_data"]["request_id"]])
+                            # flac_filename = message.context["flac_filename"]
+                            # self.socket_io_emit(event="update profile", kind="skill",
+                            #                     flac_filename=flac_filename, message=user_dict)
                         else:
                             self.bus.emit(Message('check.yml.updates',
                                                   {"modified": ["ngi_local_conf", "ngi_user_info"]},
