@@ -451,7 +451,8 @@ class DeviceControlCenterSkill(MycroftSkill):
             #     LOG.info("Nothing said")
             #     self.handle_confirm_no(message)
 
-    def converse(self, utterances, lang="en-us", message=None):
+    def converse(self, message=None):
+        utterances = message.data.get("utterances")
         user = self.get_utterance_user(message)
         LOG.debug(f"check: {utterances}")
         LOG.debug(self.actions_to_confirm)
@@ -590,11 +591,14 @@ class DeviceControlCenterSkill(MycroftSkill):
                                 user_dict["speed_multiplier"] = 1.0
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -A " + user_dict["username"]])
-                                if message.context["mobile"]:
-                                    self.socket_io_emit('clear_data', "&kind=all", message.context["flac_filename"])
+                                if self.request_from_mobile(message):
+                                    self.mobile_skill_intent("clear_data", {"kind": "all"}, message)
+                                    # self.socket_io_emit('clear_data', "&kind=all", message.context["flac_filename"])
                                 else:
-                                    self.socket_io_emit(event="clear cookies intent",
-                                                        flac_filename=message.context["flac_filename"])
+                                    self.socket_emit_to_server("clear cookies intent",
+                                                               [message.context["klat_data"]["request_id"]])
+                                    # self.socket_io_emit(event="clear cookies intent",
+                                    #                     flac_filename=message.context["flac_filename"])
 
                             # Neon.clear_data(['a'])
 
@@ -644,9 +648,10 @@ class DeviceControlCenterSkill(MycroftSkill):
                             if self.server:
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -T " + user_dict["username"]])
-                                if message.context["mobile"]:
-                                    self.socket_io_emit('clear_data', "&kind=transcripts",
-                                                        message.context["flac_filename"])
+                                if self.request_from_mobile(message):
+                                    self.mobile_skill_intent("clear_data", {"kind": "transcripts"}, message)
+                                    # self.socket_io_emit('clear_data', "&kind=transcripts",
+                                    #                     message.context["flac_filename"])
                             else:
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -t"])
@@ -677,11 +682,14 @@ class DeviceControlCenterSkill(MycroftSkill):
                                                  + "/functions.sh; refreshNeon -c"])
                             else:
                                 LOG.debug("Clear Caches")
-                                if message.context["mobile"]:
-                                    self.socket_io_emit('clear_data', "&kind=cache", message.context["flac_filename"])
+                                if self.request_from_mobile(message):
+                                    self.mobile_skill_intent("clear_data", {"kind": "cache"}, message)
+                                    # self.socket_io_emit('clear_data', "&kind=cache", message.context["flac_filename"])
                                 else:
-                                    self.socket_io_emit(event="clear cookies intent",
-                                                        kind=message.context["flac_filename"])
+                                    self.socket_emit_to_server("clear cookies intent",
+                                                               [message.context["klat_data"]["request_id"]])
+                                    # self.socket_io_emit(event="clear cookies intent",
+                                    #                     kind=message.context["flac_filename"])
 
                         if f"erasePrefs_{confrimed_num}" in actions_requested:
                             LOG.info(">>> Clear Preferences")
@@ -704,8 +712,9 @@ class DeviceControlCenterSkill(MycroftSkill):
                         if f"eraseMedia_{confrimed_num}" in actions_requested:
                             # Neon.clear_data(['p'])
                             if self.server:
-                                if message.context["mobile"]:
-                                    self.socket_io_emit('clear_data', "&kind=media", message.context["flac_filename"])
+                                if self.request_from_mobile(message):
+                                    self.mobile_skill_intent("clear_data", {"kind": "media"}, message)
+                                    # self.socket_io_emit('clear_data', "&kind=media", message.context["flac_filename"])
                                 else:
                                     pass
                             else:
@@ -734,9 +743,11 @@ class DeviceControlCenterSkill(MycroftSkill):
 
                         LOG.debug("DM: Clear Data Confirmed")
                         if self.server:
-                            flac_filename = message.context["flac_filename"]
-                            self.socket_io_emit(event="update profile", kind="skill",
-                                                flac_filename=flac_filename, message=user_dict)
+                            self.socket_emit_to_server("update profile", ["skill", user_dict,
+                                                                          message.context["klat_data"]["request_id"]])
+                            # flac_filename = message.context["flac_filename"]
+                            # self.socket_io_emit(event="update profile", kind="skill",
+                            #                     flac_filename=flac_filename, message=user_dict)
                         else:
                             self.bus.emit(Message('check.yml.updates',
                                                   {"modified": ["ngi_local_conf", "ngi_user_info"]},
