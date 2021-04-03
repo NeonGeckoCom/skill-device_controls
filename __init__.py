@@ -20,17 +20,19 @@
 import git
 import glob
 import os
+import subprocess
 
 from requests import HTTPError
 from adapt.intent import IntentBuilder
 from random import randint
-from mycroft.skills.core import MycroftSkill
-from mycroft.messagebus.message import Message
-import subprocess
-from mycroft.util.log import LOG
+from mycroft_bus_client import Message
+from neon_utils.skills.neon_skill import NeonSkill, LOG
+# from mycroft.skills.core import MycroftSkill
+# from mycroft.messagebus.message import Message
+# from mycroft.util.log import LOG
 
 
-class DeviceControlCenterSkill(MycroftSkill):
+class DeviceControlCenterSkill(NeonSkill):
     """
     Class name: DeviceControlCenterSkill
 
