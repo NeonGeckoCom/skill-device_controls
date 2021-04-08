@@ -122,7 +122,7 @@ class DeviceControlCenterSkill(NeonSkill):
         """
         if self.neon_in_request(message):
             user = self.get_utterance_user(message)
-            if self.user_info_available["listener"]["wake_word_enabled"]:
+            if self.local_config.get("interface", {}).get("wake_word_enabled", True):
                 self.clear_signals("DCC")
                 self.await_confirmation(user, "StartSWW")
                 self.speak_dialog("AskStartSkipping", expect_response=True, private=True)
@@ -134,7 +134,7 @@ class DeviceControlCenterSkill(NeonSkill):
         Enable wake words and stop always-listening recognizer
         :param message: message object associated with request
         """
-        if not self.user_info_available["listener"]["wake_word_enabled"]:
+        if not self.local_config.get("interface", {}).get("wake_word_enabled", True):
             user = self.get_utterance_user(message)
             self.await_confirmation(user, "StopSWW")
             self.speak_dialog("AskStartRequiring", expect_response=True, private=True)
@@ -362,13 +362,13 @@ class DeviceControlCenterSkill(NeonSkill):
                 LOG.debug(f"{user} confirmed action")
                 if "StartSWW" in actions_requested:
                     self.speak_dialog("ConfirmSkipWW", private=True)
-                    self.user_config.update_yaml_file("listener", "wake_word_enabled", False)
+                    self.local_config.update_yaml_file("interface", "wake_word_enabled", False)
                     self.bus.emit(message.forward("neon.wake_words_state", {"enabled": False}))
                     self.bus.emit(Message('check.yml.updates', {"modified": ["ngi_user_info"]},
                                           {"origin": "device-control-center.neon"}))
                 elif "StopSWW" in actions_requested:
                     self.speak_dialog("ConfirmRequireWW", private=True)
-                    self.user_config.update_yaml_file("listener", "wake_word_enabled", True)
+                    self.local_config.update_yaml_file("interface", "wake_word_enabled", True)
                     self.bus.emit(message.forward("neon.wake_words_state", {"enabled": True}))
                     self.bus.emit(Message('check.yml.updates', {"modified": ["ngi_user_info"]},
                                           {"origin": "device-control-center.neon"}))
