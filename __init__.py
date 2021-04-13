@@ -22,6 +22,7 @@ import glob
 import os
 import subprocess
 
+from neon_utils.message_utils import request_from_mobile
 from requests import HTTPError
 from adapt.intent import IntentBuilder
 from random import randint
@@ -234,7 +235,7 @@ class DeviceControlCenterSkill(NeonSkill):
         :param message: message object associated with request
         """
         if self.neon_in_request(message):
-            if self.request_from_mobile(message):
+            if request_from_mobile(message):
                 pass
             elif self.server:
                 pass
@@ -453,7 +454,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                 user_dict["speed_multiplier"] = 1.0
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -A " + user_dict["username"]])
-                                if self.request_from_mobile(message):
+                                if request_from_mobile(message):
                                     self.mobile_skill_intent("clear_data", {"kind": "all"}, message)
                                 else:
                                     self.socket_emit_to_server("clear cookies intent",
@@ -507,7 +508,7 @@ class DeviceControlCenterSkill(NeonSkill):
                             if self.server:
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -T " + user_dict["username"]])
-                                if self.request_from_mobile(message):
+                                if request_from_mobile(message):
                                     self.mobile_skill_intent("clear_data", {"kind": "transcripts"}, message)
                             else:
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
@@ -539,7 +540,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                                  + "/functions.sh; refreshNeon -c"])
                             else:
                                 LOG.debug("Clear Caches")
-                                if self.request_from_mobile(message):
+                                if request_from_mobile(message):
                                     self.mobile_skill_intent("clear_data", {"kind": "cache"}, message)
                                 else:
                                     self.socket_emit_to_server("clear cookies intent",
@@ -563,7 +564,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                               {"kind": "pictures, videos, and audio recordings I have taken."},
                                               private=True)
                             if self.server:
-                                if self.request_from_mobile(message):
+                                if request_from_mobile(message):
                                     self.mobile_skill_intent("clear_data", {"kind": "media"}, message)
                                 else:
                                     pass
