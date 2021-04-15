@@ -20,17 +20,20 @@
 import git
 import glob
 import os
+import subprocess
 
+from neon_utils.message_utils import request_from_mobile
 from requests import HTTPError
 from adapt.intent import IntentBuilder
 from random import randint
-from mycroft.skills.core import MycroftSkill
-from mycroft.messagebus.message import Message
-import subprocess
-from mycroft.util.log import LOG
+from mycroft_bus_client import Message
+from neon_utils.skills.neon_skill import NeonSkill, LOG
+# from mycroft.skills.core import MycroftSkill
+# from mycroft.messagebus.message import Message
+# from mycroft.util.log import LOG
 
 
-class DeviceControlCenterSkill(MycroftSkill):
+class DeviceControlCenterSkill(NeonSkill):
     """
     Class name: DeviceControlCenterSkill
 
@@ -76,9 +79,9 @@ class DeviceControlCenterSkill(MycroftSkill):
         self.register_intent(stop_solo_intent, self.handle_use_wake_words)
 
         # When first run or demo prompt not dismissed, wait for load and prompt user
-        if self.configuration_available["prefFlags"]["showDemo"] and not self.server:
+        if self.configuration_available.get("prefFlags", {}).get("showDemo", False) and not self.server:
             self.bus.once('mycroft.ready', self._show_demo_prompt)
-        elif self.configuration_available["prefFlags"]["notifyRelease"] and not self.server:
+        elif self.configuration_available.get("prefFlags", {}).get("notifyRelease", False) and not self.server:
             self.bus.once('mycroft.ready', self._check_release)
 
     def _show_demo_prompt(self, message):
@@ -99,7 +102,9 @@ class DeviceControlCenterSkill(MycroftSkill):
         """
         LOG.debug("Checking release!")
         resp = self.bus.wait_for_response(Message("neon.client.check_release"))
-        version_file = glob.glob(f'{self.configuration_available["dirVars"]["ngiDir"]}/*.release')[0]
+        version_file = glob.glob(
+            f'{self.configuration_available.get("dirVars", {}).get("ngiDir") or os.path.expanduser("~/neon")}'
+            f'/*.release')[0]
         version = os.path.splitext(os.path.basename(version_file))[0]  # 2009.0
         major, minor = version.split('.')
         new_major = resp.data.get("version_major", 0)
@@ -120,7 +125,7 @@ class DeviceControlCenterSkill(MycroftSkill):
         """
         if self.neon_in_request(message):
             user = self.get_utterance_user(message)
-            if self.user_info_available["listener"]["wake_word_enabled"]:
+            if self.local_config.get("interface", {}).get("wake_word_enabled", True):
                 self.clear_signals("DCC")
                 self.await_confirmation(user, "StartSWW")
                 self.speak_dialog("AskStartSkipping", expect_response=True, private=True)
@@ -132,7 +137,7 @@ class DeviceControlCenterSkill(MycroftSkill):
         Enable wake words and stop always-listening recognizer
         :param message: message object associated with request
         """
-        if not self.user_info_available["listener"]["wake_word_enabled"]:
+        if not self.local_config.get("interface", {}).get("wake_word_enabled", True):
             user = self.get_utterance_user(message)
             self.await_confirmation(user, "StopSWW")
             self.speak_dialog("AskStartRequiring", expect_response=True, private=True)
@@ -201,12 +206,12 @@ class DeviceControlCenterSkill(MycroftSkill):
             self.clear_signals("DCC")
             if self.check_for_signal('CORE_useHesitation', -1):
                 self.speak("Understood. Give me a moment to check for available updates.", private=True)
-            current_version = self.configuration_available["devVars"]["version"]
+            current_version = self.configuration_available.get("devVars", {}).get("version", "0000-00-00")
 
             try:
                 new_version = git.Git(self.configuration_available["dirVars"]["coreDir"]).log(
                     "-1", "--format=%ai",
-                    f'origin/{self.configuration_available["remoteVars"]["coreBranch"]}')
+                    f'origin/{self.configuration_available.get("remoteVars", {}).get("coreBranch")}')
                 new_date, new_time, _ = new_version.split(" ", 2)
                 new_time = new_time.replace(":", "")
                 new_version = f"{new_date}-{new_time}"
@@ -232,7 +237,7 @@ class DeviceControlCenterSkill(MycroftSkill):
         :param message: message object associated with request
         """
         if self.neon_in_request(message):
-            if self.request_from_mobile(message):
+            if request_from_mobile(message):
                 pass
             elif self.server:
                 pass
@@ -360,13 +365,13 @@ class DeviceControlCenterSkill(MycroftSkill):
                 LOG.debug(f"{user} confirmed action")
                 if "StartSWW" in actions_requested:
                     self.speak_dialog("ConfirmSkipWW", private=True)
-                    self.user_config.update_yaml_file("listener", "wake_word_enabled", False)
+                    self.local_config.update_yaml_file("interface", "wake_word_enabled", False)
                     self.bus.emit(message.forward("neon.wake_words_state", {"enabled": False}))
                     self.bus.emit(Message('check.yml.updates', {"modified": ["ngi_user_info"]},
                                           {"origin": "device-control-center.neon"}))
                 elif "StopSWW" in actions_requested:
                     self.speak_dialog("ConfirmRequireWW", private=True)
-                    self.user_config.update_yaml_file("listener", "wake_word_enabled", True)
+                    self.local_config.update_yaml_file("interface", "wake_word_enabled", True)
                     self.bus.emit(message.forward("neon.wake_words_state", {"enabled": True}))
                     self.bus.emit(Message('check.yml.updates', {"modified": ["ngi_user_info"]},
                                           {"origin": "device-control-center.neon"}))
@@ -388,7 +393,7 @@ class DeviceControlCenterSkill(MycroftSkill):
                     if not self.server:
                         self.speak("Starting the update.", private=True)
                         try:
-                            os.chdir(self.configuration_available["dirVars"]["ngiDir"])
+                            os.chdir(self.configuration_available.get("dirVars", {}).get("ngiDir"))
                             subprocess.call(['gnome-terminal', '--', 'sudo', "./update.sh"])
                         except HTTPError as e:
                             LOG.info(e)
@@ -451,7 +456,7 @@ class DeviceControlCenterSkill(MycroftSkill):
                                 user_dict["speed_multiplier"] = 1.0
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -A " + user_dict["username"]])
-                                if self.request_from_mobile(message):
+                                if request_from_mobile(message):
                                     self.mobile_skill_intent("clear_data", {"kind": "all"}, message)
                                 else:
                                     self.socket_emit_to_server("clear cookies intent",
@@ -505,7 +510,7 @@ class DeviceControlCenterSkill(MycroftSkill):
                             if self.server:
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -T " + user_dict["username"]])
-                                if self.request_from_mobile(message):
+                                if request_from_mobile(message):
                                     self.mobile_skill_intent("clear_data", {"kind": "transcripts"}, message)
                             else:
                                 subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
@@ -537,7 +542,7 @@ class DeviceControlCenterSkill(MycroftSkill):
                                                  + "/functions.sh; refreshNeon -c"])
                             else:
                                 LOG.debug("Clear Caches")
-                                if self.request_from_mobile(message):
+                                if request_from_mobile(message):
                                     self.mobile_skill_intent("clear_data", {"kind": "cache"}, message)
                                 else:
                                     self.socket_emit_to_server("clear cookies intent",
@@ -561,7 +566,7 @@ class DeviceControlCenterSkill(MycroftSkill):
                                               {"kind": "pictures, videos, and audio recordings I have taken."},
                                               private=True)
                             if self.server:
-                                if self.request_from_mobile(message):
+                                if request_from_mobile(message):
                                     self.mobile_skill_intent("clear_data", {"kind": "media"}, message)
                                 else:
                                     pass
