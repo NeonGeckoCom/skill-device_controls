@@ -102,6 +102,9 @@ class DeviceControlCenterSkill(NeonSkill):
         """
         LOG.debug("Checking release!")
         resp = self.bus.wait_for_response(Message("neon.client.check_release"))
+        if not resp:
+            LOG.error(f"No response from server!")
+            return False
         version_file = glob.glob(
             f'{self.configuration_available.get("dirVars", {}).get("ngiDir") or os.path.expanduser("~/neon")}'
             f'/*.release')[0]
@@ -137,7 +140,7 @@ class DeviceControlCenterSkill(NeonSkill):
         Enable wake words and stop always-listening recognizer
         :param message: message object associated with request
         """
-        if not self.configuration_available.get("interface", {}).get("wake_word_enabled", True):
+        if not self.configuration_available.get("interface", {}).get("wake_word_enabled", False):
             user = self.get_utterance_user(message)
             self.await_confirmation(user, "StopSWW")
             self.speak_dialog("AskStartRequiring", expect_response=True, private=True)
