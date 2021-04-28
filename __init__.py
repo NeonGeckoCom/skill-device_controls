@@ -79,9 +79,9 @@ class DeviceControlCenterSkill(NeonSkill):
         self.register_intent(stop_solo_intent, self.handle_use_wake_words)
 
         # When first run or demo prompt not dismissed, wait for load and prompt user
-        if self.configuration_available.get("prefFlags", {}).get("showDemo", False) and not self.server:
+        if self.local_config.get("prefFlags", {}).get("showDemo", False) and not self.server:
             self.bus.once('mycroft.ready', self._show_demo_prompt)
-        elif self.configuration_available.get("prefFlags", {}).get("notifyRelease", False) and not self.server:
+        elif self.local_config.get("prefFlags", {}).get("notifyRelease", False) and not self.server:
             self.bus.once('mycroft.ready', self._check_release)
 
     def _show_demo_prompt(self, message):
@@ -106,7 +106,7 @@ class DeviceControlCenterSkill(NeonSkill):
             LOG.error(f"No response from server!")
             return False
         version_file = glob.glob(
-            f'{self.configuration_available.get("dirVars", {}).get("ngiDir") or os.path.expanduser("~/neon")}'
+            f'{self.local_config.get("dirVars", {}).get("ngiDir") or os.path.expanduser("~/.neon")}'
             f'/*.release')[0]
         version = os.path.splitext(os.path.basename(version_file))[0]  # 2009.0
         major, minor = version.split('.')
@@ -128,7 +128,7 @@ class DeviceControlCenterSkill(NeonSkill):
         """
         if self.neon_in_request(message):
             user = self.get_utterance_user(message)
-            if self.configuration_available.get("interface", {}).get("wake_word_enabled", True):
+            if self.local_config.get("interface", {}).get("wake_word_enabled", True):
                 self.clear_signals("DCC")
                 self.await_confirmation(user, "StartSWW")
                 self.speak_dialog("AskStartSkipping", expect_response=True, private=True)
@@ -140,7 +140,7 @@ class DeviceControlCenterSkill(NeonSkill):
         Enable wake words and stop always-listening recognizer
         :param message: message object associated with request
         """
-        if not self.configuration_available.get("interface", {}).get("wake_word_enabled", False):
+        if not self.local_config.get("interface", {}).get("wake_word_enabled", False):
             user = self.get_utterance_user(message)
             self.await_confirmation(user, "StopSWW")
             self.speak_dialog("AskStartRequiring", expect_response=True, private=True)
@@ -209,12 +209,12 @@ class DeviceControlCenterSkill(NeonSkill):
             self.clear_signals("DCC")
             if self.check_for_signal('CORE_useHesitation', -1):
                 self.speak("Understood. Give me a moment to check for available updates.", private=True)
-            current_version = self.configuration_available.get("devVars", {}).get("version", "0000-00-00")
+            current_version = self.local_config.get("devVars", {}).get("version", "0000-00-00")
 
             try:
-                new_version = git.Git(self.configuration_available["dirVars"]["coreDir"]).log(
+                new_version = git.Git(self.local_config["dirVars"]["coreDir"]).log(
                     "-1", "--format=%ai",
-                    f'origin/{self.configuration_available.get("remoteVars", {}).get("coreBranch")}')
+                    f'origin/{self.local_config.get("remoteVars", {}).get("coreBranch")}')
                 new_date, new_time, _ = new_version.split(" ", 2)
                 new_time = new_time.replace(":", "")
                 new_version = f"{new_date}-{new_time}"
@@ -248,7 +248,7 @@ class DeviceControlCenterSkill(NeonSkill):
                 if self.check_for_signal('CORE_useHesitation', -1):
                     self.speak("Here you go", private=True)
                 # import os
-                os.chdir(self.configuration_available["dirVars"]["ngiDir"])
+                os.chdir(self.local_config["dirVars"]["ngiDir"])
                 os.system('gnome-terminal -- shortcuts/demoNeon.sh')
 
     def handle_exit_shutdown_intent(self, message):
@@ -396,7 +396,7 @@ class DeviceControlCenterSkill(NeonSkill):
                     if not self.server:
                         self.speak("Starting the update.", private=True)
                         try:
-                            os.chdir(self.configuration_available.get("dirVars", {}).get("ngiDir"))
+                            os.chdir(self.local_config.get("dirVars", {}).get("ngiDir"))
                             subprocess.call(['gnome-terminal', '--', 'sudo', "./update.sh"])
                         except HTTPError as e:
                             LOG.info(e)
@@ -413,7 +413,7 @@ class DeviceControlCenterSkill(NeonSkill):
                         if f"exitNow_{confrimed_num}" in actions_requested:
                             self.speak_dialog("Exiting", private=True, wait=True)
                             if not self.server:
-                                subprocess.call([self.configuration_available["dirVars"]["coreDir"] + '/stop_neon.sh'])
+                                subprocess.call([self.local_config["dirVars"]["coreDir"] + '/stop_neon.sh'])
 
                         if f"shutdownNow_{confrimed_num}" in actions_requested:
                             LOG.info('quiting')
@@ -425,7 +425,8 @@ class DeviceControlCenterSkill(NeonSkill):
                             LOG.info(">>> Clear All")
                             self.speak_dialog("ConfirmClearAll", private=True)
                             if not self.server:
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                # TODO: Move clear data methods to Python DM
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -a"])
                             else:
                                 user_dict['ignored_brands'] = {}
@@ -457,7 +458,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                 user_dict["secondary_tts_gender"] = ""
                                 user_dict["secondary_neon_voice"] = ""
                                 user_dict["speed_multiplier"] = 1.0
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -A " + user_dict["username"]])
                                 if request_from_mobile(message):
                                     self.mobile_skill_intent("clear_data", {"kind": "all"}, message)
@@ -481,10 +482,10 @@ class DeviceControlCenterSkill(NeonSkill):
                             else:
                                 self.speak("Taking care of your selected transcripts folder", private=True)
                             if self.server:
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -S " + user_dict["username"]])
                             else:
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -s"])
 
                         if f"eraseIgnoredTranscriptions_{confrimed_num}" in actions_requested:
@@ -499,10 +500,10 @@ class DeviceControlCenterSkill(NeonSkill):
                             else:
                                 self.speak("Taking care of your ignored brands transcriptions", private=True)
                             if self.server:
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -I " + user_dict["username"]])
                             else:
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -i"])
 
                         if f"eraseAllTranscriptions_{confrimed_num}" in actions_requested:
@@ -511,12 +512,12 @@ class DeviceControlCenterSkill(NeonSkill):
                                               private=True)
                             # self.speak("Audio recordings and transcriptions cleared", private=True)
                             if self.server:
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -T " + user_dict["username"]])
                                 if request_from_mobile(message):
                                     self.mobile_skill_intent("clear_data", {"kind": "transcripts"}, message)
                             else:
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -t"])
 
                         if f"eraseProfile_{confrimed_num}" in actions_requested:
@@ -534,14 +535,14 @@ class DeviceControlCenterSkill(NeonSkill):
                                 user_dict["about"] = ""
                             else:
                                 # TODO: Update user profile DM
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -u"])
 
                         if f"eraseCache_{confrimed_num}" in actions_requested:
                             self.speak_dialog("ConfirmClearData", {"kind": "cached responses"}, private=True)
                             if not self.server:
                                 # self.speak("Clearing All cached responses.", private=True)
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -c"])
                             else:
                                 LOG.debug("Clear Caches")
@@ -559,7 +560,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                 user_dict["date"] = "MDY"
                                 user_dict["measure"] = "imperial"
                             else:
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -r"])
                             # self.speak("Resetting all interface preferences.", private=True)
 
@@ -574,7 +575,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                 else:
                                     pass
                             else:
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -p"])
 
                         if f"eraseLanguages_{confrimed_num}" in actions_requested:
@@ -593,7 +594,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                 user_dict["secondary_neon_voice"] = ""
                                 user_dict["speed_multiplier"] = 1.0
                             else:
-                                subprocess.call(['bash', '-c', ". " + self.configuration_available["dirVars"]["ngiDir"]
+                                subprocess.call(['bash', '-c', ". " + self.local_config["dirVars"]["ngiDir"]
                                                  + "/functions.sh; refreshNeon -l"])
 
                         LOG.debug("DM: Clear Data Confirmed")
