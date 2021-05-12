@@ -217,12 +217,16 @@ class DeviceControlCenterSkill(NeonSkill):
 
             try:
                 # TODO: Support packaged installations here DM
-                new_version = git.Git(self.local_config["dirVars"]["coreDir"]).log(
-                    "-1", "--format=%ai",
-                    f'origin/{self.local_config.get("remoteVars", {}).get("coreBranch")}')
-                new_date, new_time, _ = new_version.split(" ", 2)
-                new_time = new_time.replace(":", "")
-                new_version = f"{new_date}-{new_time}"
+                if self.local_config["dirVars"].get("coreDir"):
+                    new_version = git.Git(self.local_config["dirVars"]["coreDir"]).log(
+                        "-1", "--format=%ai",
+                        f'origin/{self.local_config.get("remoteVars", {}).get("coreBranch")}')
+                    new_date, new_time, _ = new_version.split(" ", 2)
+                    new_time = new_time.replace(":", "")
+                    new_version = f"{new_date}-{new_time}"
+                else:
+                    # TODO: Read git from package data? DM
+                    new_version = current_version
                 LOG.info(f"New Version={new_version}")
 
                 self.speak_dialog("CurrentVersion", {"version": str(current_version)}, private=True)
