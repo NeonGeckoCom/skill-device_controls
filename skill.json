@@ -18,6 +18,7 @@
     "systemDeps": false,
     "requirements": {
         "python": [
+            "gitpython~=3.1",
             "git+https://github.com/neongeckocom/neon-skill-utils"
         ],
         "system": {},
@@ -31,7 +32,7 @@
         "arm64",
         "arm"
     ],
-    "branch": "master",
+    "branch": "dev",
     "license": "NeonAI License v1.0",
     "icon": "https://0000.us/klatchat/app/files/neon_images/icons/neon_skill.png",
     "category": "",
@@ -43,5 +44,5 @@
     ],
     "skillname": "Device Control Center",
     "authorname": "Neon",
-    "foldername": "device-control-center.neon"
+    "foldername": null
 }
