@@ -429,13 +429,13 @@ class DeviceControlCenterSkill(NeonSkill):
                             if not self.server:
                                 self.bus.emit(Message("neon.shutdown"))
                                 # subprocess.call([self.local_config["dirVars"]["coreDir"] + '/stop_neon.sh'])
-
+                                return True
                         if f"shutdownNow_{confrimed_num}" in actions_requested:
                             LOG.info('quiting')
                             self.speak("ShuttingDown", private=True, wait=True)
                             if not self.server:
                                 os.system("shutdown now -h")
-
+                                return True
                         if f"eraseAllData_{confrimed_num}" in actions_requested:
                             LOG.info(">>> Clear All")
                             self.speak_dialog("ConfirmClearAll", private=True)
