@@ -103,26 +103,30 @@ class DeviceControlCenterSkill(NeonSkill):
         :param message: message object associated with loaded emit
         """
         LOG.debug("Checking release!")
-        resp = self.bus.wait_for_response(Message("neon.client.check_release"))
-        if not resp:
-            LOG.error(f"No response from server!")
-            return False
-        # TODO: Use versioning checks in neon_utils DM
-        version_file = glob.glob(
-            f'{self.local_config.get("dirVars", {}).get("ngiDir") or os.path.expanduser("~/.neon")}'
-            f'/*.release')[0]
-        version = os.path.splitext(os.path.basename(version_file))[0]  # 2009.0
-        major, minor = version.split('.')
-        new_major = resp.data.get("version_major", 0)
-        new_minor = resp.data.get("version_minor", 0)
-        # LOG.debug(str(result))
-        if new_major > major or (new_major == major and new_minor > minor):
-            # TODO: Dialog update when moved to packaged core DM
-            # Server Reported Release Different than Install
-            self.speak("There is a new release available from Neon Gecko. "
-                       "Please pull changes on GitHub.", private=True, message=message)
-            return True
-        else:
+        try:
+            resp = self.bus.wait_for_response(Message("neon.client.check_release"))
+            if not resp:
+                LOG.error(f"No response from server!")
+                return False
+            # TODO: Use versioning checks in neon_utils DM
+            version_file = glob.glob(
+                f'{self.local_config.get("dirVars", {}).get("ngiDir") or os.path.expanduser("~/.neon")}'
+                f'/*.release')[0]
+            version = os.path.splitext(os.path.basename(version_file))[0]  # 2009.0
+            major, minor = version.split('.')
+            new_major = resp.data.get("version_major", 0)
+            new_minor = resp.data.get("version_minor", 0)
+            # LOG.debug(str(result))
+            if new_major > major or (new_major == major and new_minor > minor):
+                # TODO: Dialog update when moved to packaged core DM
+                # Server Reported Release Different than Install
+                self.speak("There is a new release available from Neon Gecko. "
+                           "Please pull changes on GitHub.", private=True, message=message)
+                return True
+            else:
+                return False
+        except Exception as e:
+            LOG.error(e)
             return False
 
     def handle_skip_wake_words(self, message):
@@ -216,17 +220,21 @@ class DeviceControlCenterSkill(NeonSkill):
             current_version = self.local_config.get("devVars", {}).get("version", "0000-00-00")
 
             try:
-                # TODO: Support packaged installations here DM
-                new_version = git.Git(self.local_config["dirVars"]["coreDir"]).log(
-                    "-1", "--format=%ai",
-                    f'origin/{self.local_config.get("remoteVars", {}).get("coreBranch")}')
-                new_date, new_time, _ = new_version.split(" ", 2)
-                new_time = new_time.replace(":", "")
-                new_version = f"{new_date}-{new_time}"
+                if self.local_config["dirVars"].get("coreDir") and \
+                        os.path.exists(os.path.join(self.local_config["dirVars"]["coreDir"], ".git")):
+                    new_version = git.Git(self.local_config["dirVars"]["coreDir"]).log(
+                        "-1", "--format=%ai",
+                        f'origin/{self.local_config.get("remoteVars", {}).get("coreBranch")}')
+                    new_date, new_time, _ = new_version.split(" ", 2)
+                    new_time = new_time.replace(":", "")
+                    new_version = f"{new_date}-{new_time}"
+                else:
+                    # TODO: Read version from package data? DM
+                    new_version = current_version
                 LOG.info(f"New Version={new_version}")
 
                 self.speak_dialog("CurrentVersion", {"version": str(current_version)}, private=True)
-                if str(current_version) != str(new_version):
+                if new_version and str(current_version) != str(new_version):
                     self.speak_dialog("UpdateAvailable", {"version": str(new_version)},
                                       expect_response=True, private=True)
                 else:
@@ -421,13 +429,13 @@ class DeviceControlCenterSkill(NeonSkill):
                             if not self.server:
                                 self.bus.emit(Message("neon.shutdown"))
                                 # subprocess.call([self.local_config["dirVars"]["coreDir"] + '/stop_neon.sh'])
-
+                                return True
                         if f"shutdownNow_{confrimed_num}" in actions_requested:
                             LOG.info('quiting')
                             self.speak("ShuttingDown", private=True, wait=True)
                             if not self.server:
                                 os.system("shutdown now -h")
-
+                                return True
                         if f"eraseAllData_{confrimed_num}" in actions_requested:
                             LOG.info(">>> Clear All")
                             self.speak_dialog("ConfirmClearAll", private=True)

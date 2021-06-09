@@ -17,7 +17,10 @@
     "warning": "",
     "systemDeps": false,
     "requirements": {
-        "python": [],
+        "python": [
+            "gitpython~=3.1",
+            "git+https://github.com/neongeckocom/neon-skill-utils"
+        ],
         "system": {},
         "skill": []
     },
@@ -41,6 +44,5 @@
     ],
     "skillname": "Device Control Center",
     "authorname": "Neon",
-    "foldername": "device-control-center.neon",
-    "download_url": "https://api.github.com/repos/NeonGeckoCom/device-control-center.neon/zipball/master"
+    "foldername": null
 }
