@@ -20,6 +20,9 @@
 import os
 
 from enum import Enum
+
+from mycroft import intent_handler
+
 from neon_utils.message_utils import request_from_mobile
 from adapt.intent import IntentBuilder
 from random import randint
@@ -53,52 +56,79 @@ class DeviceControlCenterSkill(NeonSkill):
         self.register_entity_file('dialogmode.entity')
         self.register_intent_file("change_dialog.intent", self.handle_change_dialog_option)
 
-        clear_data_intent = IntentBuilder("clear_data_intent").require("ClearKeyword").require("dataset").\
-            optionally("neon").build()
-        self.register_intent(clear_data_intent, self.handle_data_erase)
+    def _do_exit_shutdown(self, action: SystemCommand):
+        """
+        Handle confirmed requests to stop running process.
+        :param action: SystemCommand action to perform
+        """
+        if action == SystemCommand.SHUTDOWN:
+            LOG.info('quiting')
+            self.speak_dialog("ShuttingDown", private=True, wait=True)
+            os.system("shutdown now -h")
+        elif action == SystemCommand.EXIT:
+            self.speak_dialog("Exiting", private=True, wait=True)
+            self.bus.emit(Message("neon.shutdown"))
 
-        exit_shutdown_intent = IntentBuilder("exit_shutdown_intent").require("RequestKeyword")\
-            .one_of("exit", "shutdown").optionally("neon").build()
-        self.register_intent(exit_shutdown_intent, self.handle_exit_shutdown_intent)
+    @intent_handler(IntentBuilder("exit_shutdown_intent").require("RequestKeyword")
+                    .one_of("exit", "shutdown").optionally("neon"))
+    def handle_exit_shutdown_intent(self, message):
+        """
+        Handles a request to exit or shutdown. This action will be confirmed numerically before executing
+        :param message: message object associated with request
+        """
+        if not self.server:
+            confirm_number = str(randint(100, 999))
+            validator = numeric_confirmation_validator(confirm_number)
+            if message.data.get("exit"):
+                action = SystemCommand.EXIT
+            elif message.data.get("shutdown"):
+                action = SystemCommand.SHUTDOWN
+            elif message.data.get("restart"):  # TODO: Add 'restart' vocab DM
+                action = SystemCommand.RESTART
+            else:
+                LOG.error("No exit or shutdown keyword! This shouldn't be possible")
+                return
+            response = self.get_response("ConfirmExitShutdown", {"action": action.value, "number": confirm_number},
+                                         validator, "ActionNotConfirmed")
+            if not response:
+                self.speak_dialog("CancelExit", private=True)
+            elif response:
+                self._do_exit_shutdown(action)
 
-        skip_ww_intent = IntentBuilder("skip_ww").optionally("neon").require("ww").require("start_sww").build()
-        self.register_intent(skip_ww_intent, self.handle_skip_wake_words)
-
-        use_ww_intent = IntentBuilder("use_ww").optionally("neon").require("ww").require("stop_sww").build()
-        self.register_intent(use_ww_intent, self.handle_use_wake_words)
-
-        # if not self.configuration_available["prefFlags"]["devMode"]:
-        start_solo_intent = IntentBuilder("start_solo_mode").optionally("neon").require("start")\
-            .require("solo").build()
-        self.register_intent(start_solo_intent, self.handle_skip_wake_words)
-
-        stop_solo_intent = IntentBuilder("stop_solo_mode").optionally("neon").require("stop")\
-            .require("solo").build()
-        self.register_intent(stop_solo_intent, self.handle_use_wake_words)
-
+    @intent_handler(IntentBuilder("skip_ww").optionally("neon").require("ww").require("start_sww"))
+    @intent_handler(IntentBuilder("start_solo_mode").optionally("neon").require("start").require("solo"))
     def handle_skip_wake_words(self, message):
         """
         Disable wake words and start always-listening recognizer
         :param message: message object associated with request
         """
         if self.neon_in_request(message):
-            user = self.get_utterance_user(message)
             if self.local_config.get("interface", {}).get("wake_word_enabled", True):
-                self.clear_signals("DCC")
-                self.await_confirmation(user, "StartSWW")
-                self.speak_dialog("AskStartSkipping", expect_response=True, private=True)
+                resp = self.ask_yesno("AskStartSkipping")
+                if resp == "yes":
+                    self.speak_dialog("ConfirmSkipWW", private=True)
+                    self.local_config.update_yaml_file("interface", "wake_word_enabled", False)
+                    self.bus.emit(message.forward("neon.wake_words_state", {"enabled": False}))
+                else:
+                    self.speak_dialog("NotDoingAnything", private=True)
             else:
                 self.speak_dialog("AlreadySkipping", private=True)
 
+    @intent_handler(IntentBuilder("use_ww").optionally("neon").require("ww").require("stop_sww"))
+    @intent_handler(IntentBuilder("stop_solo_mode").optionally("neon").require("stop").require("solo"))
     def handle_use_wake_words(self, message):
         """
         Enable wake words and stop always-listening recognizer
         :param message: message object associated with request
         """
         if not self.local_config.get("interface", {}).get("wake_word_enabled", False):
-            user = self.get_utterance_user(message)
-            self.await_confirmation(user, "StopSWW")
-            self.speak_dialog("AskStartRequiring", expect_response=True, private=True)
+            resp = self.ask_yesno("AskStartRequiring")
+            if resp == "yes":
+                self.speak_dialog("ConfirmRequireWW", private=True)
+                self.local_config.update_yaml_file("interface", "wake_word_enabled", True)
+                self.bus.emit(message.forward("neon.wake_words_state", {"enabled": True}))
+            else:
+                self.speak_dialog("NotDoingAnything", private=True)
         else:
             self.speak_dialog("AlreadyRequiring", private=True)
 
@@ -128,48 +158,14 @@ class DeviceControlCenterSkill(NeonSkill):
         else:
             self.speak_dialog("AlreadyInDialogMode", {"mode": dialog_mode}, private=True)
 
-    def handle_exit_shutdown_intent(self, message):
-        """
-        Handles a request to exit or shutdown. This action will be confirmed numerically before executing
-        :param message: message object associated with request
-        """
-        if not self.server:
-            confirm_number = str(randint(100, 999))
-            validator = numeric_confirmation_validator(confirm_number)
-            if message.data.get("exit"):
-                action = SystemCommand.EXIT
-            elif message.data.get("shutdown"):
-                action = SystemCommand.SHUTDOWN
-            elif message.data.get("restart"):
-                action = SystemCommand.RESTART
-            else:
-                LOG.error("No exit or shutdown keyword! This shouldn't be possible")
-                return
-            response = self.get_response("ConfirmExitShutdown", {"action": action.value, "number": confirm_number},
-                                         validator, "ActionNotConfirmed")
-            if not response:
-                self.speak_dialog("CancelExit", private=True)
-            elif response:
-                self._do_exit_shutdown(action)
-
-    def _do_exit_shutdown(self, action: SystemCommand):
-        """
-        Handle confirmed requests to stop running process.
-        :param action: SystemCommand action to perform
-        """
-        if action == SystemCommand.SHUTDOWN:
-            LOG.info('quiting')
-            self.speak_dialog("ShuttingDown", private=True, wait=True)
-            os.system("shutdown now -h")
-        elif action == SystemCommand.EXIT:
-            self.speak_dialog("Exiting", private=True, wait=True)
-            self.bus.emit(Message("neon.shutdown"))
-
+    @intent_handler(IntentBuilder("clear_data_intent").require("ClearKeyword").require("dataset")
+                    .optionally("neon"))
     def handle_data_erase(self, message):
         """
         Handles a request to clear user data. This action will be confirmed numerically before executing
         :param message: message object associated with request
         """
+        # TODO: Refactor this to use get_response, possibly spin off to separate skill DM
         opt = str(message.data.get('dataset')).replace("user ", "")
         confirm_number = randint(100, 999)
         # LOG.info(self.confirm_number)
@@ -248,19 +244,7 @@ class DeviceControlCenterSkill(NeonSkill):
                 # Response confirmed (Either boolean True or string confirmation numbers
                 actions_requested = self.actions_to_confirm.pop(user)
                 LOG.debug(f"{user} confirmed action")
-                if "StartSWW" in actions_requested:
-                    self.speak_dialog("ConfirmSkipWW", private=True)
-                    self.local_config.update_yaml_file("interface", "wake_word_enabled", False)
-                    self.bus.emit(message.forward("neon.wake_words_state", {"enabled": False}))
-                    self.bus.emit(Message('check.yml.updates', {"modified": ["ngi_user_info"]},
-                                          {"origin": "device-control-center.neon"}))
-                elif "StopSWW" in actions_requested:
-                    self.speak_dialog("ConfirmRequireWW", private=True)
-                    self.local_config.update_yaml_file("interface", "wake_word_enabled", True)
-                    self.bus.emit(message.forward("neon.wake_words_state", {"enabled": True}))
-                    self.bus.emit(Message('check.yml.updates', {"modified": ["ngi_user_info"]},
-                                          {"origin": "device-control-center.neon"}))
-                elif "StartDefaultResponse" in actions_requested:
+                if "StartDefaultResponse" in actions_requested:
                     self.create_signal("SKILLS_useDefaultResponses")
                     self.speak_dialog("ConfirmChangeDialog", {"mode": "primary responses"}, private=True)
                     # self.speak("Understood. I will use my primary responses to answer your requests.", private=True)

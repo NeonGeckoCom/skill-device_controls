@@ -19,17 +19,10 @@ Device Control skill is the “brain” behind customization and control of Neon
 -   Clearing recorded likes, audio, selected and full text transcriptions, and the rest of the user’s data;
     
 -   Audible commands to switch between skipping and requiring wake words in two modes: dev and user;
-    
--   Enabling, disabling, and configuring gestures;
-    
+
 -   Shutting down the whole device;
     
 -   Exiting from Neon’s process;
-    
--   Showing and cancelling demo, including the question of the first startup;
-    
--   Manual updates requests;
-    
 
   
 
