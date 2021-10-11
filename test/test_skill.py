@@ -16,15 +16,12 @@
 # Specialized conversational reconveyance options from Conversation Processing Intelligence Corp.
 # US Patents 2008-2021: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
 # China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
-import os
+
 import shutil
 import unittest
-from os import mkdir
-
 import pytest
 
-from time import sleep
-from copy import deepcopy
+from os import mkdir
 from os.path import dirname, join, exists
 from mock import Mock
 from mycroft_bus_client import Message
@@ -52,6 +49,13 @@ class TestSkill(unittest.TestCase):
         # Override speak and speak_dialog to test passed arguments
         cls.skill.speak = Mock()
         cls.skill.speak_dialog = Mock()
+        # Mock exit/shutdown method to prevent interactions with test runner
+        cls.skill._do_exit_shutdown = Mock()
+
+    def setUp(self):
+        self.skill.speak.reset_mock()
+        self.skill.speak_dialog.reset_mock()
+        self.skill._do_exit_shutdown.reset_mock()
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -63,40 +67,140 @@ class TestSkill(unittest.TestCase):
 
         self.assertIsInstance(self.skill, NeonSkill)
 
-        # Mock exit/shutdown method to prevent interactions with test runner
-        self.skill._do_exit_shutdown = Mock()
-
     def test_exit_confirmed(self):
-        def get_response(*args, **kwargs):
+        message = Message("valid_intent", {"exit": "exit"})
+
+        def get_response(*args):
+            self.assertEqual(args[0], "ConfirmExitShutdown")
+            dialog = args[0]
+            dialog_data = args[1]
+            validator = args[2]
+            on_fail = args[3]
+
+            self.assertEqual(dialog, "ConfirmExitShutdown")
+            self.assertEqual(dialog_data["action"], "stop Neon")
+            confirm_number = dialog_data["number"]
+            self.assertIsInstance(confirm_number, str)
+            self.assertTrue(validator(confirm_number))
+            self.assertFalse(validator(f"{confirm_number}0"))
+            self.assertEqual(on_fail, "ActionNotConfirmed")
             return True
 
         default_get_response = self.skill.get_response
         self.skill.get_response = get_response
-        message = Message("valid_intent", {"exit": "exit"})
         self.skill.handle_exit_shutdown_intent(message)
-        sleep(2)
-        self.skill.speak_dialog.assert_called_with("ConfirmExitShutdown")
         self.skill._do_exit_shutdown.assert_called()
+        self.assertEqual(self.skill._do_exit_shutdown.call_args[0][0].name, "EXIT")
+
+        self.skill.get_response = default_get_response
 
     def test_shutdown_confirmed(self):
         message = Message("valid_intent", {"shutdown": "shut down"})
-        pass
+
+        def get_response(*args):
+            self.assertEqual(args[0], "ConfirmExitShutdown")
+            dialog = args[0]
+            dialog_data = args[1]
+            validator = args[2]
+            on_fail = args[3]
+
+            self.assertEqual(dialog, "ConfirmExitShutdown")
+            self.assertEqual(dialog_data["action"], "shut down this device")
+            confirm_number = dialog_data["number"]
+            self.assertIsInstance(confirm_number, str)
+            self.assertTrue(validator(confirm_number))
+            self.assertFalse(validator(f"{confirm_number}0"))
+            self.assertEqual(on_fail, "ActionNotConfirmed")
+            return True
+
+        default_get_response = self.skill.get_response
+        self.skill.get_response = get_response
+        self.skill.handle_exit_shutdown_intent(message)
+        self.skill._do_exit_shutdown.assert_called()
+        self.assertEqual(self.skill._do_exit_shutdown.call_args[0][0].name, "SHUTDOWN")
+
+        self.skill.get_response = default_get_response
 
     def test_restart_confirmed(self):
         message = Message("valid_intent", {"restart": "reboot"})
-        pass
+
+        def get_response(*args):
+            self.assertEqual(args[0], "ConfirmExitShutdown")
+            dialog = args[0]
+            dialog_data = args[1]
+            validator = args[2]
+            on_fail = args[3]
+
+            self.assertEqual(dialog, "ConfirmExitShutdown")
+            self.assertEqual(dialog_data["action"], "restart Neon")
+            confirm_number = dialog_data["number"]
+            self.assertIsInstance(confirm_number, str)
+            self.assertTrue(validator(confirm_number))
+            self.assertFalse(validator(f"{confirm_number}0"))
+            self.assertEqual(on_fail, "ActionNotConfirmed")
+            return True
+
+        default_get_response = self.skill.get_response
+        self.skill.get_response = get_response
+        self.skill.handle_exit_shutdown_intent(message)
+        self.skill._do_exit_shutdown.assert_called()
+        self.assertEqual(self.skill._do_exit_shutdown.call_args[0][0].name, "RESTART")
+
+        self.skill.get_response = default_get_response
 
     def test_exit_cancelled(self):
         message = Message("valid_intent", {"exit": "exit"})
-        pass
 
-    def test_exit_invalid_confirmation(self):
-        message = Message("valid_intent", {"exit": "exit"})
-        pass
+        def get_response(*args):
+            self.assertEqual(args[0], "ConfirmExitShutdown")
+            dialog = args[0]
+            dialog_data = args[1]
+            validator = args[2]
+            on_fail = args[3]
+
+            self.assertEqual(dialog, "ConfirmExitShutdown")
+            self.assertEqual(dialog_data["action"], "stop Neon")
+            confirm_number = dialog_data["number"]
+            self.assertIsInstance(confirm_number, str)
+            self.assertTrue(validator(confirm_number))
+            self.assertFalse(validator(f"{confirm_number}0"))
+            self.assertEqual(on_fail, "ActionNotConfirmed")
+            return False
+
+        default_get_response = self.skill.get_response
+        self.skill.get_response = get_response
+        self.skill.handle_exit_shutdown_intent(message)
+        self.skill.speak_dialog.assert_called_with("CancelExit", private=True)
+        self.skill._do_exit_shutdown.assert_not_called()
+
+        self.skill.get_response = default_get_response
 
     def test_exit_no_response(self):
         message = Message("valid_intent", {"exit": "exit"})
-        pass
+
+        def get_response(*args):
+            self.assertEqual(args[0], "ConfirmExitShutdown")
+            dialog = args[0]
+            dialog_data = args[1]
+            validator = args[2]
+            on_fail = args[3]
+
+            self.assertEqual(dialog, "ConfirmExitShutdown")
+            self.assertEqual(dialog_data["action"], "stop Neon")
+            confirm_number = dialog_data["number"]
+            self.assertIsInstance(confirm_number, str)
+            self.assertTrue(validator(confirm_number))
+            self.assertFalse(validator(f"{confirm_number}0"))
+            self.assertEqual(on_fail, "ActionNotConfirmed")
+            return None
+
+        default_get_response = self.skill.get_response
+        self.skill.get_response = get_response
+        self.skill.handle_exit_shutdown_intent(message)
+        self.skill.speak_dialog.assert_called_with("CancelExit", private=True)
+        self.skill._do_exit_shutdown.assert_not_called()
+
+        self.skill.get_response = default_get_response
 
 
 if __name__ == '__main__':
