@@ -148,7 +148,7 @@ class DeviceControlCenterSkill(NeonSkill):
             LOG.error(f"No dialog mode found in: {message.data}")
             self.speak_dialog("DialogModeNotSpecified", private=True)
             return
-
+        # TODO: This should use some configuration value, not signals. Probably per-user config DM
         if dialog_mode == "primary" and not self.check_for_signal("SKILLS_useDefaultResponses", -1):
             self.await_confirmation(user, "StartDefaultResponse")
             self.speak_dialog("ChangeDialog", {'mode': dialog_mode}, True, private=True)
