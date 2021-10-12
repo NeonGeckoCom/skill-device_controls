@@ -1,2 +1,4 @@
 gitpython~=3.1
 neon-utils>=0.10.3a0
+lingua-nostra
+# TODO: Lingua-nostra dependency is really just a patch
