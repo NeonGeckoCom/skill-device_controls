@@ -17,22 +17,25 @@
 # US Patents 2008-2021: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
 # China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
 
-import git
-import glob
 import os
-import subprocess
 
+from enum import Enum
 from neon_utils.message_utils import request_from_mobile
-from requests import HTTPError
 from adapt.intent import IntentBuilder
 from random import randint
 from mycroft_bus_client import Message
 from neon_utils.skills.neon_skill import NeonSkill, LOG
+from neon_utils.validator_utils import numeric_confirmation_validator
+
+from mycroft import intent_handler
 
 from .data_utils import refresh_neon
-# from mycroft.skills.core import MycroftSkill
-# from mycroft.messagebus.message import Message
-# from mycroft.util.log import LOG
+
+
+class SystemCommand(Enum):
+    SHUTDOWN = "shut down this device"
+    RESTART = "restart Neon"
+    EXIT = "stop Neon"
 
 
 class DeviceControlCenterSkill(NeonSkill):
@@ -52,106 +55,78 @@ class DeviceControlCenterSkill(NeonSkill):
         self.register_entity_file('dialogmode.entity')
         self.register_intent_file("change_dialog.intent", self.handle_change_dialog_option)
 
-        do_update = IntentBuilder("update_neon").optionally("neon").require("update_neon").build()
-        self.register_intent(do_update, self.handle_update_neon)
-
-        self.register_intent_file("show_demo.intent", self.handle_show_demo)
-
-        clear_data_intent = IntentBuilder("clear_data_intent").require("ClearKeyword").require("dataset").\
-            optionally("neon").build()
-        self.register_intent(clear_data_intent, self.handle_data_erase)
-
-        exit_shutdown_intent = IntentBuilder("exit_shutdown_intent").require("RequestKeyword")\
-            .one_of("Exit", "shutdown").optionally("neon").build()
-        self.register_intent(exit_shutdown_intent, self.handle_exit_shutdown_intent)
-
-        skip_ww_intent = IntentBuilder("skip_ww").optionally("neon").require("ww").require("start_sww").build()
-        self.register_intent(skip_ww_intent, self.handle_skip_wake_words)
-
-        use_ww_intent = IntentBuilder("use_ww").optionally("neon").require("ww").require("stop_sww").build()
-        self.register_intent(use_ww_intent, self.handle_use_wake_words)
-
-        # if not self.configuration_available["prefFlags"]["devMode"]:
-        start_solo_intent = IntentBuilder("start_solo_mode").optionally("neon").require("start")\
-            .require("solo").build()
-        self.register_intent(start_solo_intent, self.handle_skip_wake_words)
-
-        stop_solo_intent = IntentBuilder("stop_solo_mode").optionally("neon").require("stop")\
-            .require("solo").build()
-        self.register_intent(stop_solo_intent, self.handle_use_wake_words)
-
-        # When first run or demo prompt not dismissed, wait for load and prompt user
-        if self.local_config.get("prefFlags", {}).get("showDemo", False) and not self.server:
-            self.bus.once('mycroft.ready', self._show_demo_prompt)
-        elif self.local_config.get("prefFlags", {}).get("notifyRelease", False) and not self.server:
-            self.bus.once('mycroft.ready', self._check_release)
-
-    def _show_demo_prompt(self, message):
+    def _do_exit_shutdown(self, action: SystemCommand):
         """
-        Handles first run demo prompt
-        :param message: message object associated with loaded emit
+        Handle confirmed requests to stop running process.
+        :param action: SystemCommand action to perform
         """
-        LOG.debug("Prompting Demo!")
-        self.make_active()
-        self.await_confirmation(self.get_utterance_user(message), "startDemoPrompt", 600)
-        self.speak("Would you like me to show you the demo of my abilities?",
-                   expect_response=True, private=True)
+        if action == SystemCommand.SHUTDOWN:
+            self.speak_dialog("ShuttingDown", private=True, wait=True)
+            os.system("shutdown now -h")
+        elif action == SystemCommand.EXIT:
+            self.speak_dialog("Exiting", private=True, wait=True)
+            self.bus.emit(Message("neon.shutdown"))
 
-    def _check_release(self, message):
+    @intent_handler(IntentBuilder("exit_shutdown_intent").require("RequestKeyword")
+                    .one_of("exit", "shutdown"))
+    def handle_exit_shutdown_intent(self, message):
         """
-        Handles checking for a new release version
-        :param message: message object associated with loaded emit
+        Handles a request to exit or shutdown. This action will be confirmed numerically before executing
+        :param message: message object associated with request
         """
-        LOG.debug("Checking release!")
-        try:
-            resp = self.bus.wait_for_response(Message("neon.client.check_release"))
-            if not resp:
-                LOG.error(f"No response from server!")
-                return False
-            # TODO: Use versioning checks in neon_utils DM
-            version_file = glob.glob(
-                f'{self.local_config.get("dirVars", {}).get("ngiDir") or os.path.expanduser("~/.neon")}'
-                f'/*.release')[0]
-            version = os.path.splitext(os.path.basename(version_file))[0]  # 2009.0
-            major, minor = version.split('.')
-            new_major = resp.data.get("version_major", 0)
-            new_minor = resp.data.get("version_minor", 0)
-            # LOG.debug(str(result))
-            if new_major > major or (new_major == major and new_minor > minor):
-                # TODO: Dialog update when moved to packaged core DM
-                # Server Reported Release Different than Install
-                self.speak("There is a new release available from Neon Gecko. "
-                           "Please pull changes on GitHub.", private=True, message=message)
-                return True
+        if not self.server:
+            confirm_number = str(randint(100, 999))
+            validator = numeric_confirmation_validator(confirm_number)
+            if message.data.get("exit"):
+                action = SystemCommand.EXIT
+            elif message.data.get("shutdown"):
+                action = SystemCommand.SHUTDOWN
+            elif message.data.get("restart"):  # TODO: Add 'restart' vocab DM
+                action = SystemCommand.RESTART
             else:
-                return False
-        except Exception as e:
-            LOG.error(e)
-            return False
+                LOG.error("No exit or shutdown keyword! This shouldn't be possible")
+                return
+            response = self.get_response("ConfirmExitShutdown", {"action": action.value, "number": confirm_number},
+                                         validator, "ActionNotConfirmed")
+            if not response:
+                self.speak_dialog("CancelExit", private=True)
+            elif response:
+                self._do_exit_shutdown(action)
 
+    @intent_handler(IntentBuilder("skip_ww").optionally("neon").require("ww").require("start_sww"))
+    @intent_handler(IntentBuilder("start_solo_mode").optionally("neon").require("start").require("solo"))
     def handle_skip_wake_words(self, message):
         """
         Disable wake words and start always-listening recognizer
         :param message: message object associated with request
         """
         if self.neon_in_request(message):
-            user = self.get_utterance_user(message)
             if self.local_config.get("interface", {}).get("wake_word_enabled", True):
-                self.clear_signals("DCC")
-                self.await_confirmation(user, "StartSWW")
-                self.speak_dialog("AskStartSkipping", expect_response=True, private=True)
+                resp = self.ask_yesno("AskStartSkipping")
+                if resp == "yes":
+                    self.speak_dialog("ConfirmSkipWW", private=True)
+                    self.local_config.update_yaml_file("interface", "wake_word_enabled", False)
+                    self.bus.emit(message.forward("neon.wake_words_state", {"enabled": False}))
+                else:
+                    self.speak_dialog("NotDoingAnything", private=True)
             else:
                 self.speak_dialog("AlreadySkipping", private=True)
 
+    @intent_handler(IntentBuilder("use_ww").optionally("neon").require("ww").require("stop_sww"))
+    @intent_handler(IntentBuilder("stop_solo_mode").optionally("neon").require("stop").require("solo"))
     def handle_use_wake_words(self, message):
         """
         Enable wake words and stop always-listening recognizer
         :param message: message object associated with request
         """
         if not self.local_config.get("interface", {}).get("wake_word_enabled", False):
-            user = self.get_utterance_user(message)
-            self.await_confirmation(user, "StopSWW")
-            self.speak_dialog("AskStartRequiring", expect_response=True, private=True)
+            resp = self.ask_yesno("AskStartRequiring")
+            if resp == "yes":
+                self.speak_dialog("ConfirmRequireWW", private=True)
+                self.local_config.update_yaml_file("interface", "wake_word_enabled", True)
+                self.bus.emit(message.forward("neon.wake_words_state", {"enabled": True}))
+            else:
+                self.speak_dialog("NotDoingAnything", private=True)
         else:
             self.speak_dialog("AlreadyRequiring", private=True)
 
@@ -171,7 +146,7 @@ class DeviceControlCenterSkill(NeonSkill):
             LOG.error(f"No dialog mode found in: {message.data}")
             self.speak_dialog("DialogModeNotSpecified", private=True)
             return
-
+        # TODO: This should use some configuration value, not signals. Probably per-user config DM
         if dialog_mode == "primary" and not self.check_for_signal("SKILLS_useDefaultResponses", -1):
             self.await_confirmation(user, "StartDefaultResponse")
             self.speak_dialog("ChangeDialog", {'mode': dialog_mode}, True, private=True)
@@ -180,117 +155,15 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("ChangeDialog", {'mode': dialog_mode}, True, private=True)
         else:
             self.speak_dialog("AlreadyInDialogMode", {"mode": dialog_mode}, private=True)
-        # if dialog_mode is not None:
-        #     if not any(x in dialog_mode for x in available_modes) and self.neon_in_request(message):
-        #         self.speak("It looks like you did not specify which dialog "
-        #                    "option you would like me to use.", private=True)
-        #
-        #         if not self.check_for_signal("SKILLS_useDefaultResponses", -1):
-        #             self.await_confirmation(user, "StartDefaultResponse")
-        #             dialog_mode = "primary"
-        #         else:
-        #             self.await_confirmation(user, "StartRandomResponse")
-        #             dialog_mode = "random"
-        #         self.speak_dialog("ChangeDialog", {'mode': dialog_mode}, True, private=True)
-        #     else:
-        #         if "random" in dialog_mode:
-        #             dialog_mode = "random"
-        #             self.await_confirmation(user, "StartRandomResponse")
-        #         elif "default" in dialog_mode or "primary" in dialog_mode:
-        #             dialog_mode = "primary"
-        #             self.await_confirmation(user, "StartDefaultResponse")
-        #         self.speak_dialog("ChangeDialog", {'mode': dialog_mode}, True, private=True)
-        # else:
-        #     LOG.error(f"No dialog mode found in: {message.data}")
-        #     self.speak_dialog("DialogModeNotSpecified", private=True)
 
-    def handle_update_neon(self, message):
-        """
-        Checks the version file on the git repository associated with this installation and compares to local version.
-        If up to date, will check for a new release in the parent NeonGecko repository and notify user. User will
-        be given the option to start an update in cases where there is an update available OR no new release available.
-        :param message: message object associated with request
-        """
-        if self.neon_in_request(message) and not self.server:
-            user = self.get_utterance_user(message)
-            # if not self.server:
-            self.clear_signals("DCC")
-            if self.check_for_signal('CORE_useHesitation', -1):
-                self.speak("Understood. Give me a moment to check for available updates.", private=True)
-            current_version = self.local_config.get("devVars", {}).get("version", "0000-00-00")
-
-            try:
-                if self.local_config["dirVars"].get("coreDir") and \
-                        os.path.exists(os.path.join(self.local_config["dirVars"]["coreDir"], ".git")):
-                    new_version = git.Git(self.local_config["dirVars"]["coreDir"]).log(
-                        "-1", "--format=%ai",
-                        f'origin/{self.local_config.get("remoteVars", {}).get("coreBranch")}')
-                    new_date, new_time, _ = new_version.split(" ", 2)
-                    new_time = new_time.replace(":", "")
-                    new_version = f"{new_date}-{new_time}"
-                else:
-                    # TODO: Read version from package data? DM
-                    new_version = current_version
-                LOG.info(f"New Version={new_version}")
-
-                self.speak_dialog("CurrentVersion", {"version": str(current_version)}, private=True)
-                if new_version and str(current_version) != str(new_version):
-                    self.speak_dialog("UpdateAvailable", {"version": str(new_version)},
-                                      expect_response=True, private=True)
-                else:
-                    if not self._check_release(message):
-                        self.speak_dialog("AlreadyUpdated", private=True)
-                        # self.await_confirmation(user, "initiateUpdate")
-            except Exception as e:
-                LOG.error(e)
-                self.speak_dialog("ErrorCheckingVersion", private=True)
-            self.await_confirmation(user, "initiateUpdate")
-
-    def handle_show_demo(self, message):
-        # TODO: This is very out of date. Update (maybe run script instead of using test function) DM
-        """
-        Starts the demoNeon shell script
-        :param message: message object associated with request
-        """
-        if self.neon_in_request(message):
-            if request_from_mobile(message):
-                pass
-            elif self.server:
-                pass
-            else:
-                if self.check_for_signal('CORE_useHesitation', -1):
-                    self.speak("Here you go", private=True)
-                # import os
-                # TODO: Make a new demo? DM
-                os.chdir(self.local_config["dirVars"]["ngiDir"])
-                os.system('gnome-terminal -- shortcuts/demoNeon.sh')
-
-    def handle_exit_shutdown_intent(self, message):
-        """
-        Handles a request to exit or shutdown. This action will be confirmed numerically before executing
-        :param message: message object associated with request
-        """
-        user = self.get_utterance_user(message)
-        if not self.server:
-            self.clear_signals("DCC")
-            confirm_number = randint(100, 999)
-            if message.data.get("Exit"):
-                action = "stop me from running"
-                self.await_confirmation(user, f"exitNow_{confirm_number}")
-            elif message.data.get("shutdown"):
-                action = "initiate full shutdown"
-                self.await_confirmation(user, f"shutdownNow_{confirm_number}")
-            else:
-                LOG.error("No exit or shutdown keyword! This shouldn't be possible")
-                return
-            self.speak_dialog("ConfirmExitShutdown", {"action": action, "number": str(confirm_number)},
-                              expect_response=True, private=True, wait=True)
-
+    @intent_handler(IntentBuilder("clear_data_intent").require("ClearKeyword").require("dataset")
+                    .optionally("neon"))
     def handle_data_erase(self, message):
         """
         Handles a request to clear user data. This action will be confirmed numerically before executing
         :param message: message object associated with request
         """
+        # TODO: Refactor this to use get_response, possibly spin off to separate skill DM
         opt = str(message.data.get('dataset')).replace("user ", "")
         confirm_number = randint(100, 999)
         # LOG.info(self.confirm_number)
@@ -363,57 +236,19 @@ class DeviceControlCenterSkill(NeonSkill):
                 return False
             elif not result:
                 # Response declined
-                actions_requested = self.actions_to_confirm.pop(user)
-                if "demoNextTime" in actions_requested:
-                    self.speak_dialog("DemoNextTime", private=True)
-                    self.local_config.update_yaml_file("prefFlags", "showDemo", False, final=True)
-
-                elif "startDemoPrompt" in actions_requested:
-                    self.await_confirmation(user, "demoNextTime")
-                    self.speak_dialog("AskDemoNextTime", expect_response=True, private=True)
-                elif any(opt in actions_requested for opt in ("shutdownNow", "exitNow")):
-                    self.speak_dialog("CancelExit", private=True)
-                else:  # No follow-up questions
-                    self.speak_dialog("NotDoingAnything", private=True)
+                self.speak_dialog("NotDoingAnything", private=True)
                 return True
             elif result:
                 # Response confirmed (Either boolean True or string confirmation numbers
                 actions_requested = self.actions_to_confirm.pop(user)
                 LOG.debug(f"{user} confirmed action")
-                if "StartSWW" in actions_requested:
-                    self.speak_dialog("ConfirmSkipWW", private=True)
-                    self.local_config.update_yaml_file("interface", "wake_word_enabled", False)
-                    self.bus.emit(message.forward("neon.wake_words_state", {"enabled": False}))
-                    self.bus.emit(Message('check.yml.updates', {"modified": ["ngi_user_info"]},
-                                          {"origin": "device-control-center.neon"}))
-                elif "StopSWW" in actions_requested:
-                    self.speak_dialog("ConfirmRequireWW", private=True)
-                    self.local_config.update_yaml_file("interface", "wake_word_enabled", True)
-                    self.bus.emit(message.forward("neon.wake_words_state", {"enabled": True}))
-                    self.bus.emit(Message('check.yml.updates', {"modified": ["ngi_user_info"]},
-                                          {"origin": "device-control-center.neon"}))
-                elif "StartDefaultResponse" in actions_requested:
+                if "StartDefaultResponse" in actions_requested:
                     self.create_signal("SKILLS_useDefaultResponses")
                     self.speak_dialog("ConfirmChangeDialog", {"mode": "primary responses"}, private=True)
                     # self.speak("Understood. I will use my primary responses to answer your requests.", private=True)
                 elif "StartRandomResponse" in actions_requested:
                     self.check_for_signal("SKILLS_useDefaultResponses")
                     self.speak_dialog("ConfirmChangeDialog", {"mode": "dialog options"}, private=True)
-                    # self.speak("No problem. I will use my dialog options from now on", private=True)
-                elif "startDemoPrompt" in actions_requested:
-                    self.handle_show_demo(message)
-                elif "demoNextTime" in actions_requested:
-                    self.speak("Understood. I will ask again next time.", private=True)
-                    self.local_config.update_yaml_file("prefFlags", "showDemo", True, final=True)
-
-                elif "initiateUpdate" in actions_requested:
-                    if not self.server:
-                        self.speak("Starting the update.", private=True)
-                        try:
-                            os.chdir(self.local_config.get("dirVars", {}).get("ngiDir"))
-                            subprocess.call(['gnome-terminal', '--', 'sudo', "./update.sh"])
-                        except HTTPError as e:
-                            LOG.info(e)
 
                 # Else this is a numeric confirmation with potentially multiple actions requested
                 else:
@@ -424,18 +259,6 @@ class DeviceControlCenterSkill(NeonSkill):
                         # Actions confirmed
                         user_dict = self.build_user_dict(message) if self.server else None
 
-                        if f"exitNow_{confrimed_num}" in actions_requested:
-                            self.speak_dialog("Exiting", private=True, wait=True)
-                            if not self.server:
-                                self.bus.emit(Message("neon.shutdown"))
-                                # subprocess.call([self.local_config["dirVars"]["coreDir"] + '/stop_neon.sh'])
-                                return True
-                        if f"shutdownNow_{confrimed_num}" in actions_requested:
-                            LOG.info('quiting')
-                            self.speak("ShuttingDown", private=True, wait=True)
-                            if not self.server:
-                                os.system("shutdown now -h")
-                                return True
                         if f"eraseAllData_{confrimed_num}" in actions_requested:
                             LOG.info(">>> Clear All")
                             self.speak_dialog("ConfirmClearAll", private=True)

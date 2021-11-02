@@ -19,7 +19,7 @@
     "requirements": {
         "python": [
             "gitpython~=3.1",
-            "neon-utils>=0.5.7"
+            "neon-utils>=0.12.2"
         ],
         "system": {},
         "skill": []

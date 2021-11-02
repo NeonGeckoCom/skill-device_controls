@@ -2,7 +2,7 @@
 
 ## Summary
 
-Primary core device skill responsible for handling multiple system commands.
+Handles system-wide settings and controls.
 
 ## Requirements
 
@@ -10,26 +10,17 @@ No special required packages for this skill.
 
 ## Description
 
-Device Control skill is the primary and one of the most important and complex skills for Neon’s internal controls. It goes hand-in-hand with Neon’s User Settings Control skill. Those two skills provide similar functionality but are separated logically.
-
-Device Control skill is the “brain” behind customization and control of Neon’s device. It is responsible for:
+Device Control skill handles base core/OS controls and interactions It is responsible for:
 
 -   Changing dialog modes;
     
 -   Clearing recorded likes, audio, selected and full text transcriptions, and the rest of the user’s data;
     
 -   Audible commands to switch between skipping and requiring wake words in two modes: dev and user;
-    
--   Enabling, disabling, and configuring gestures;
-    
+
 -   Shutting down the whole device;
     
 -   Exiting from Neon’s process;
-    
--   Showing and cancelling demo, including the question of the first startup;
-    
--   Manual updates requests;
-    
 
   
 
@@ -38,12 +29,12 @@ Device Control skill is the “brain” behind customization and control of Neon
 First, make your request. Say `“Hey Neon”` if you are in the wake words mode. Then say your desired command. Use the following list as a reference:
 
 - "Change your dialog mode to (random/default)"
-- clear my user (profile/transcripts/likes/media/preferences/languages)"
-- "(skip/require) wake words"
-- "(enable/disable) (blink/clap) commands"
-- "I want you to (exit/shutdown)"
-- "show me the demo"
-- "check for updates"
+- "clear my user (profile/transcripts/likes/media/preferences/languages)"
+- "skip wake words"
+- "require wake words"
+- "I want you to exit"
+- "I want you to shutdown"
+- "I want you to restart"
 
 ## Change dialog mode
 
@@ -162,35 +153,9 @@ And the following to start skipping the wakewords:
     -   allow ( skipping {ww} | solo mode )
         
     -   enter ( skipping {ww} | solo mode )
-    
 
-## Enable/Disable Gestures
-
-    (enable|diable) (blink|clap) commands
-
-## Shutdown device
-
-    I want you to (shutdown|shut down)
-
-## Exiting from Neon
-
-    I want you to exit
-
-## Show demo of skills
-
-    neon i want to see the demo
-    
-    neon show me the demo
-
-## Update Neon
-   
-    Neon update my device software
-    
-    Neon check for updates
-
-  
-
-Most likely, Neon will ask for the confirmation to most of the choices available above. Follow the prompts and reply either with simple positive or negative answer, or follow it up by the requested 3-digit code.
+Most likely, Neon will ask for the confirmation to most of the choices available above. Follow the prompts and reply 
+either with simple positive or negative answer, or follow it up by the requested 3-digit code.
 
 Wait for the successful confirmation or action execution from Neon. Most commands should be instantaneous.
 
@@ -447,21 +412,9 @@ Wait for the successful confirmation or action execution from Neon. Most command
 
 Please refer to [How to Use](how-to-use) for more information.
 
-  
-
 ### Picture
 
 ### Video
-
-  
-
-## Troubleshooting
-
-This skill is fairly complex in terms of the intents. If the skill is not loading for any reason [contact us](contact-us) - device-control is the primary skill and not much else will be able to function without it.
-
-If you have a problem with false-positives for clearing data intent, please [submit an issue on GitHub](https://help.github.com/en/articles/creating-an-issue).
-
-  
 
 ## Contact Support
 
@@ -469,8 +422,22 @@ Use the [link](https://neongecko.com/ContactUs) or [submit an issue on GitHub](h
 
 ## Credits
 
-reginaneon [neongeckocom](https://neongecko.com/)
+@NeonGeckoCom
+@reginaneon
+@NeonDaniel
 
+## Category
+**Configuration**
+Daily
+
+## Tags
+#NeonGecko
+#NeonAI
+#controls
+#device
+#wake words
+#power
+#settings
 
 
 
