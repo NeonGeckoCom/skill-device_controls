@@ -62,7 +62,6 @@ class DeviceControlCenterSkill(NeonSkill):
         :param action: SystemCommand action to perform
         """
         if action == SystemCommand.SHUTDOWN:
-            LOG.info('quiting')
             self.speak_dialog("ShuttingDown", private=True, wait=True)
             os.system("shutdown now -h")
         elif action == SystemCommand.EXIT:
@@ -70,7 +69,7 @@ class DeviceControlCenterSkill(NeonSkill):
             self.bus.emit(Message("neon.shutdown"))
 
     @intent_handler(IntentBuilder("exit_shutdown_intent").require("RequestKeyword")
-                    .one_of("exit", "shutdown").optionally("neon"))
+                    .one_of("exit", "shutdown"))
     def handle_exit_shutdown_intent(self, message):
         """
         Handles a request to exit or shutdown. This action will be confirmed numerically before executing
