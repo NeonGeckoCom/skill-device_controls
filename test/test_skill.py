@@ -35,7 +35,6 @@ class TestSkill(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-
         bus = FakeBus()
         bus.run_in_thread()
         skill_loader = SkillLoader(bus, dirname(dirname(__file__)))

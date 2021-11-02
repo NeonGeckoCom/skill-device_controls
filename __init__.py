@@ -20,15 +20,14 @@
 import os
 
 from enum import Enum
-
-from mycroft import intent_handler
-
 from neon_utils.message_utils import request_from_mobile
 from adapt.intent import IntentBuilder
 from random import randint
 from mycroft_bus_client import Message
 from neon_utils.skills.neon_skill import NeonSkill, LOG
 from neon_utils.validator_utils import numeric_confirmation_validator
+
+from mycroft import intent_handler
 
 from .data_utils import refresh_neon
 
