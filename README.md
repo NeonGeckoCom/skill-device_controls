@@ -430,7 +430,7 @@ Use the [link](https://neongecko.com/ContactUs) or [submit an issue on GitHub](h
 Daily
 
 ## Tags
-#NeonGecko
+#NeonGecko Original
 #NeonAI
 #controls
 #device
