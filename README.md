@@ -421,17 +421,16 @@ Please refer to [How to Use](how-to-use) for more information.
 Use the [link](https://neongecko.com/ContactUs) or [submit an issue on GitHub](https://help.github.com/en/articles/creating-an-issue)
 
 ## Credits
-
-@NeonGeckoCom
-@reginaneon
-@NeonDaniel
+[NeonGeckoCom](https://github.com/NeonGeckoCom)
+[reginaneon](https://github.com/reginaneon)
+[NeonDaniel](https://github.com/NeonDaniel)
 
 ## Category
 **Configuration**
 Daily
 
 ## Tags
-#NeonGecko
+#NeonGecko Original
 #NeonAI
 #controls
 #device
