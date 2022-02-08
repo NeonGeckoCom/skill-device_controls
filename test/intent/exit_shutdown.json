@@ -1,7 +1,0 @@
-{
-  "utterance": "we are done for today",
-  "intent_type": "exit_shutdown",
-  "intent": {
-    "exit_shutdown": "we are done for today"
-}
-}

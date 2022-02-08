@@ -1,8 +1,0 @@
-{
-  "utterance": "change your dialog mode to primary",
-  "intent_type": "ChangeDialogOptions",
-  "intent": {
-    "change_dialog": "change your dialog mode to ",
-    "dialogmode": "primary"
-}
-}
