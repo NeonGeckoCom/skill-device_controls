@@ -89,7 +89,7 @@ class DeviceControlCenterSkill(NeonSkill):
                     self.local_config.update_yaml_file("interface", "wake_word_enabled", False)
                     self.bus.emit(message.forward("neon.wake_words_state", {"enabled": False}))
                 else:
-                    self.speak_dialog("NotDoingAnything", private=True)
+                    self.speak_dialog("not_doing_anything", private=True)
             else:
                 self.speak_dialog("already_skipping", private=True)
 
@@ -107,7 +107,7 @@ class DeviceControlCenterSkill(NeonSkill):
                 self.local_config.update_yaml_file("interface", "wake_word_enabled", True)
                 self.bus.emit(message.forward("neon.wake_words_state", {"enabled": True}))
             else:
-                self.speak_dialog("NotDoingAnything", private=True)
+                self.speak_dialog("not_doing_anything", private=True)
         else:
             self.speak_dialog("already_requiring", private=True)
 
