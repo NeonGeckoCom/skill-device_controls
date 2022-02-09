@@ -60,8 +60,6 @@ class TestSkill(unittest.TestCase):
         cls.skill.user_config = get_neon_user_config(cls.test_fs)
         cls.skill.settings_write_path = cls.test_fs
         cls.skill.file_system.path = cls.test_fs
-        cls.skill._init_settings()
-        cls.skill.initialize()
 
         # Override speak and speak_dialog to test passed arguments
         cls.skill.speak = Mock()
