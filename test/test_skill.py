@@ -28,6 +28,8 @@
 
 import shutil
 import unittest
+from threading import Event
+
 import pytest
 
 from os import mkdir
@@ -56,8 +58,8 @@ class TestSkill(unittest.TestCase):
             mkdir(cls.test_fs)
 
         # Override the configuration and fs paths to use the test directory
-        cls.skill.local_config = get_neon_local_config(cls.test_fs)
-        cls.skill.user_config = get_neon_user_config(cls.test_fs)
+        cls.skill._local_config = get_neon_local_config(cls.test_fs)
+        cls.skill._user_config = get_neon_user_config(cls.test_fs)
         cls.skill.settings_write_path = cls.test_fs
         cls.skill.file_system.path = cls.test_fs
 
@@ -453,6 +455,54 @@ class TestSkill(unittest.TestCase):
         self.skill.handle_use_wake_words(message)
         self.skill.speak_dialog.assert_called_with("already_requiring",
                                                    private=True)
+
+    def test_handle_confirm_listening(self):
+        listening_state = None
+        update_event = Event()
+
+        def handle_confirm_listening(msg):
+            nonlocal listening_state
+            listening_state = msg.data["enabled"]
+            update_event.set()
+
+        self.skill.bus.on("neon.confirm_listening", handle_confirm_listening)
+        test_message = Message("test", {"enable": "turn on"})
+        update_event.clear()
+        self.skill.handle_confirm_listening(test_message)
+        self.skill.speak_dialog.assert_called_with("confirm_listening_enabled")
+        update_event.wait(3)
+        self.assertTrue(listening_state)
+
+        test_message = Message("test", {"disable": "disable"})
+        update_event.clear()
+        self.skill.handle_confirm_listening(test_message)
+        self.skill.speak_dialog.assert_called_with("confirm_listening_disabled")
+        update_event.wait(3)
+        self.assertFalse(listening_state)
+
+    def test_handle_show_debug(self):
+        debug_state = None
+        update_event = Event()
+
+        def handle_show_debug(msg):
+            nonlocal debug_state
+            debug_state = msg.data["enabled"]
+            update_event.set()
+
+        self.skill.bus.on("neon.show_debug", handle_show_debug)
+        test_message = Message("test", {"enable": "turn on"})
+        update_event.clear()
+        self.skill.handle_show_debug(test_message)
+        self.skill.speak_dialog.assert_called_with("confirm_brain_enabled")
+        update_event.wait(3)
+        self.assertTrue(debug_state)
+
+        test_message = Message("test", {"disable": "disable"})
+        update_event.clear()
+        self.skill.handle_show_debug(test_message)
+        self.skill.speak_dialog.assert_called_with("confirm_brain_disabled")
+        update_event.wait(3)
+        self.assertFalse(debug_state)
 
 
 if __name__ == '__main__':
