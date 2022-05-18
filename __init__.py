@@ -111,6 +111,45 @@ class DeviceControlCenterSkill(NeonSkill):
         else:
             self.speak_dialog("already_requiring", private=True)
 
+    @intent_handler(IntentBuilder("ConfirmListening")
+                    .one_of("enable", "disable").require("listening").build())
+    def handle_confirm_listening(self, message):
+        """
+        Enable confirmation sounds when a wake word is detected
+        :param message: Message associated with request
+        """
+        enabled = True if message.data.get("enable") else False
+
+        if enabled:
+            self.speak_dialog("confirm_listening_enabled")
+        else:
+            self.speak_dialog("confirm_listening_disabled")
+        self.local_config.update_yaml_file("interface",
+                                           "confirm_listening", enabled)
+        self.bus.emit(message.forward("neon.confirm_listening",
+                                      {"enabled": enabled}))
+        # TODO: Handle this event DM
+
+    @intent_handler(IntentBuilder("ShowDebug")
+                    .one_of("enable", "disable").require("debug").build())
+    def handle_show_debug(self, message):
+        enabled = True if message.data.get("enable") else False
+
+        if enabled:
+            self.speak_dialog("confirm_brain_enabled")
+        else:
+            self.speak_dialog("confirm_brain_disabled")
+        self.local_config.update_yaml_file("interface",
+                                           "display_neon_brain", enabled)
+        self.bus.emit(message.forward("neon.show_debug",
+                                      {"enabled": enabled}))
+        # TODO: Handle this event DM
+
+    # TODO: Write Intent
+    def change_ww(self, message):
+        # TODO: Add rx parsing, emit event
+        pass
+
     def stop(self):
         pass
 
