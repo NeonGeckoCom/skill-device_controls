@@ -4,10 +4,6 @@
 
 Handles system-wide settings and controls.
 
-## Requirements
-
-No special required packages for this skill.
-
 ## Description
 
 Device Control skill handles base core/OS controls and interactions It is responsible for:
