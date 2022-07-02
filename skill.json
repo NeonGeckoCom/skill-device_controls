@@ -16,8 +16,7 @@
     "systemDeps": false,
     "requirements": {
         "python": [
-            "gitpython~=3.1",
-            "neon-utils~=0.13"
+            "neon_utils>=1.0.0a1"
         ],
         "system": {},
         "skill": []
