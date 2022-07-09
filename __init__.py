@@ -48,6 +48,15 @@ class DeviceControlCenterSkill(NeonSkill):
     def __init__(self):
         super(DeviceControlCenterSkill, self).__init__(name="DeviceControlCenterSkill")
 
+    @property
+    def ww_enabled(self):
+        resp = self.bus.get_response(Message("neon.query_wake_words_state"))
+        if not resp:
+            return None
+        if resp.data.get('enabled', True):
+            return True
+        return False
+
     @intent_handler(IntentBuilder("exit_shutdown_intent").require("request")
                     .one_of("exit", "shutdown", "restart"))
     def handle_exit_shutdown_intent(self, message):
@@ -55,57 +64,63 @@ class DeviceControlCenterSkill(NeonSkill):
         Handles a request to exit or shutdown. This action will be confirmed numerically before executing
         :param message: message object associated with request
         """
-        if not self.server:
-            confirm_number = str(randint(100, 999))
-            validator = numeric_confirmation_validator(confirm_number)
-            if message.data.get("exit"):
-                action = SystemCommand.EXIT
-            elif message.data.get("shutdown"):
-                action = SystemCommand.SHUTDOWN
-            elif message.data.get("restart"):
-                action = SystemCommand.RESTART
-            else:
-                LOG.error("No exit, shutdown, or restart keyword")
-                return
-            response = self.get_response("ask_exit_shutdown", {"action": action.value, "number": confirm_number},
-                                         validator, "action_not_confirmed")
-            if not response:
-                self.speak_dialog("confirm_cancel", private=True)
-            elif response:
-                self._do_exit_shutdown(action)
+        confirm_number = str(randint(100, 999))
+        validator = numeric_confirmation_validator(confirm_number)
+        if message.data.get("exit"):
+            action = SystemCommand.EXIT
+        elif message.data.get("shutdown"):
+            action = SystemCommand.SHUTDOWN
+        elif message.data.get("restart"):
+            action = SystemCommand.RESTART
+        else:
+            LOG.error("No exit, shutdown, or restart keyword")
+            return
+        response = self.get_response("ask_exit_shutdown",
+                                     {"action": action.value,
+                                      "number": confirm_number},
+                                     validator, "action_not_confirmed")
+        if not response:
+            self.speak_dialog("confirm_cancel", private=True)
+        elif response:
+            self._do_exit_shutdown(action)
 
-    @intent_handler(IntentBuilder("skip_ww").require("ww").require("start_sww"))
-    @intent_handler(IntentBuilder("start_solo_mode").require("start").require("solo"))
+    @intent_handler(IntentBuilder("skip_ww").require("ww")
+                    .require("start_sww"))
+    @intent_handler(IntentBuilder("start_solo_mode").require("start")
+                    .require("solo"))
     def handle_skip_wake_words(self, message):
         """
         Disable wake words and start always-listening recognizer
         :param message: message object associated with request
         """
         if self.neon_in_request(message):
-            if self.local_config.get("interface", {}).get("wake_word_enabled", True):
+            ww_state = self.ww_enabled
+            if ww_state:
                 resp = self.ask_yesno("ask_start_skipping")
                 if resp == "yes":
                     self.speak_dialog("confirm_skip_ww", private=True)
-                    self.local_config.update_yaml_file("interface", "wake_word_enabled", False)
-                    self.bus.emit(message.forward("neon.wake_words_state", {"enabled": False}))
+                    self.bus.emit(message.forward("neon.wake_words_state",
+                                                  {"enabled": False}))
                 else:
                     self.speak_dialog("not_doing_anything", private=True)
             else:
                 self.speak_dialog("already_skipping", private=True)
 
     @intent_handler(IntentBuilder("use_ww").require("ww").require("stop_sww"))
-    @intent_handler(IntentBuilder("stop_solo_mode").require("stop").require("solo"))
+    @intent_handler(IntentBuilder("stop_solo_mode").require("stop")
+                    .require("solo"))
     def handle_use_wake_words(self, message):
         """
         Enable wake words and stop always-listening recognizer
         :param message: message object associated with request
         """
-        if not self.local_config.get("interface", {}).get("wake_word_enabled", False):
+        ww_state = self.ww_enabled
+        if ww_state is False:  # If no return, assume WW always required
             resp = self.ask_yesno("ask_start_requiring")
             if resp == "yes":
                 self.speak_dialog("confirm_require_ww", private=True)
-                self.local_config.update_yaml_file("interface", "wake_word_enabled", True)
-                self.bus.emit(message.forward("neon.wake_words_state", {"enabled": True}))
+                self.bus.emit(message.forward("neon.wake_words_state",
+                                              {"enabled": True}))
             else:
                 self.speak_dialog("not_doing_anything", private=True)
         else:
@@ -124,8 +139,6 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("confirm_listening_enabled")
         else:
             self.speak_dialog("confirm_listening_disabled")
-        self.local_config.update_yaml_file("interface",
-                                           "confirm_listening", enabled)
         self.bus.emit(message.forward("neon.confirm_listening",
                                       {"enabled": enabled}))
         # TODO: Handle this event DM
@@ -139,8 +152,6 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("confirm_brain_enabled")
         else:
             self.speak_dialog("confirm_brain_disabled")
-        self.local_config.update_yaml_file("interface",
-                                           "display_neon_brain", enabled)
         self.bus.emit(message.forward("neon.show_debug",
                                       {"enabled": enabled}))
         # TODO: Handle this event DM
