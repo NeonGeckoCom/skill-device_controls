@@ -53,7 +53,7 @@ class TestSkill(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         bus = FakeBus()
-        bus.get_response = _mock_get_response
+        bus.wait_for_response = _mock_get_response
         bus.run_in_thread()
         skill_loader = SkillLoader(bus, dirname(dirname(__file__)))
         skill_loader.load()
