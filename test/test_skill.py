@@ -92,8 +92,7 @@ class TestSkill(unittest.TestCase):
         from neon_utils.skills import NeonSkill
 
         self.assertIsInstance(self.skill, NeonSkill)
-        self.assertTrue(
-            self.skill.local_config["interface"]["wake_word_enabled"])
+        self.assertTrue(self.skill.ww_enabled)
 
     def test_handle_exit_shutdown_intent_exit_confirmed(self):
         message = Message("valid_intent", {"exit": "exit"})
@@ -235,7 +234,8 @@ class TestSkill(unittest.TestCase):
         self.skill.get_response = default_get_response
 
     def test_handle_skip_wake_words_confirmed(self):
-        self.skill.local_config["interface"]["wake_word_enabled"] = True
+        global WW_STATE
+        WW_STATE = True
         message = Message("valid_intent", {"neon": "Neon", "ww": "wake words",
                                            "start_sww": "begin"},
                           {"test_context": "something"})
@@ -248,6 +248,8 @@ class TestSkill(unittest.TestCase):
             self.assertEqual(msg.msg_type, "neon.wake_words_state")
             self.assertEqual(msg.data, {"enabled": False})
             self.assertEqual(msg.context, message.context)
+            global WW_STATE
+            WW_STATE = False
 
         def ask_yesno(*args):
             dialog = args[0]
@@ -263,13 +265,13 @@ class TestSkill(unittest.TestCase):
         self.skill.speak_dialog.assert_called_with("confirm_skip_ww",
                                                    private=True)
         self.assertTrue(called)
-        self.assertFalse(
-            self.skill.local_config["interface"]["wake_word_enabled"])
+        self.assertFalse(self.skill.ww_enabled)
 
         self.skill.ask_yesno = default_ask_yesno
 
     def test_handle_skip_wake_words_declined(self):
-        self.skill.local_config["interface"]["wake_word_enabled"] = True
+        global WW_STATE
+        WW_STATE = True
         message = Message("valid_intent", {"neon": "Neon", "ww": "wake words",
                                            "start_sww": "begin"},
                           {"test_context": "something"})
@@ -297,13 +299,13 @@ class TestSkill(unittest.TestCase):
         self.skill.speak_dialog.assert_called_with("not_doing_anything",
                                                    private=True)
         self.assertFalse(called)
-        self.assertTrue(
-            self.skill.local_config["interface"]["wake_word_enabled"])
+        self.assertTrue(self.skill.ww_enabled)
 
         self.skill.ask_yesno = default_ask_yesno
 
     def test_handle_skip_wake_words_unconfirmed(self):
-        self.skill.local_config["interface"]["wake_word_enabled"] = True
+        global WW_STATE
+        WW_STATE = True
         message = Message("valid_intent", {"neon": "Neon",
                                            "ww": "wake words",
                                            "start_sww": "begin"},
@@ -332,13 +334,13 @@ class TestSkill(unittest.TestCase):
         self.skill.speak_dialog.assert_called_with("not_doing_anything",
                                                    private=True)
         self.assertFalse(called)
-        self.assertTrue(
-            self.skill.local_config["interface"]["wake_word_enabled"])
+        self.assertTrue(self.skill.ww_enabled)
 
         self.skill.ask_yesno = default_ask_yesno
 
     def test_handle_skip_wake_words_already_skipping(self):
-        self.skill.local_config["interface"]["wake_word_enabled"] = False
+        global WW_STATE
+        WW_STATE = False
         message = Message("valid_intent", {"neon": "Neon", "ww": "wake words",
                                            "start_sww": "begin"},
                           {"test_context": "something"})
