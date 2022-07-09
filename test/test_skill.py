@@ -37,9 +37,15 @@ from os.path import dirname, join, exists
 from mock import Mock
 from mycroft_bus_client import Message
 from ovos_utils.messagebus import FakeBus
-from neon_utils.configuration_utils import get_neon_local_config, get_neon_user_config
 
 from mycroft.skills.skill_loader import SkillLoader
+
+
+WW_STATE = True
+
+
+def _mock_get_response(message):
+    return message.response({'enabled': WW_STATE})
 
 
 class TestSkill(unittest.TestCase):
@@ -47,6 +53,7 @@ class TestSkill(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         bus = FakeBus()
+        bus.get_response = _mock_get_response
         bus.run_in_thread()
         skill_loader = SkillLoader(bus, dirname(dirname(__file__)))
         skill_loader.load()
@@ -58,8 +65,6 @@ class TestSkill(unittest.TestCase):
             mkdir(cls.test_fs)
 
         # Override the configuration and fs paths to use the test directory
-        cls.skill._local_config = get_neon_local_config(cls.test_fs)
-        cls.skill._user_config = get_neon_user_config(cls.test_fs)
         cls.skill.settings_write_path = cls.test_fs
         cls.skill.file_system.path = cls.test_fs
 
@@ -342,7 +347,8 @@ class TestSkill(unittest.TestCase):
                                                    private=True)
 
     def test_handle_use_wake_words_confirmed(self):
-        self.skill.local_config["interface"]["wake_word_enabled"] = False
+        global WW_STATE
+        WW_STATE = False
         message = Message("valid_intent", {"neon": "Neon",
                                            "ww": "wake words",
                                            "stop_sww": "quit"},
@@ -371,13 +377,12 @@ class TestSkill(unittest.TestCase):
         self.skill.speak_dialog.assert_called_with("confirm_require_ww",
                                                    private=True)
         self.assertTrue(called)
-        self.assertTrue(
-            self.skill.local_config["interface"]["wake_word_enabled"])
 
         self.skill.ask_yesno = default_ask_yesno
 
     def test_handle_use_wake_words_declined(self):
-        self.skill.local_config["interface"]["wake_word_enabled"] = False
+        global WW_STATE
+        WW_STATE = False
         message = Message("valid_intent", {"neon": "Neon",
                                            "ww": "wake words",
                                            "stop_sww": "quit"},
@@ -406,13 +411,12 @@ class TestSkill(unittest.TestCase):
         self.skill.speak_dialog.assert_called_with("not_doing_anything",
                                                    private=True)
         self.assertFalse(called)
-        self.assertFalse(
-            self.skill.local_config["interface"]["wake_word_enabled"])
 
         self.skill.ask_yesno = default_ask_yesno
 
     def test_handle_use_wake_words_unconfirmed(self):
-        self.skill.local_config["interface"]["wake_word_enabled"] = False
+        global WW_STATE
+        WW_STATE = False
         message = Message("valid_intent", {"neon": "Neon",
                                            "ww": "wake words",
                                            "stop_sww": "quit"},
@@ -441,13 +445,12 @@ class TestSkill(unittest.TestCase):
         self.skill.speak_dialog.assert_called_with("not_doing_anything",
                                                    private=True)
         self.assertFalse(called)
-        self.assertFalse(
-            self.skill.local_config["interface"]["wake_word_enabled"])
 
         self.skill.ask_yesno = default_ask_yesno
 
     def test_handle_use_wake_words_already_requiring(self):
-        self.skill.local_config["interface"]["wake_word_enabled"] = True
+        global WW_STATE
+        WW_STATE = True
         message = Message("valid_intent", {"neon": "Neon",
                                            "ww": "wake words",
                                            "stop_sww": "quit"},
