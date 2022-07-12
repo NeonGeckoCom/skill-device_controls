@@ -50,8 +50,9 @@ class DeviceControlCenterSkill(NeonSkill):
 
     @property
     def ww_enabled(self):
-        resp = self.bus.get_response(Message("neon.query_wake_words_state"))
+        resp = self.bus.wait_for_response(Message("neon.query_wake_words_state"))
         if not resp:
+            LOG.warning("No WW Status reported")
             return None
         if resp.data.get('enabled', True):
             return True
@@ -99,8 +100,8 @@ class DeviceControlCenterSkill(NeonSkill):
                 resp = self.ask_yesno("ask_start_skipping")
                 if resp == "yes":
                     self.speak_dialog("confirm_skip_ww", private=True)
-                    self.bus.emit(message.forward("neon.wake_words_state",
-                                                  {"enabled": False}))
+                    self.bus.wait_for_response(message.forward(
+                        "neon.wake_words_state", {"enabled": False}))
                 else:
                     self.speak_dialog("not_doing_anything", private=True)
             else:
@@ -119,8 +120,8 @@ class DeviceControlCenterSkill(NeonSkill):
             resp = self.ask_yesno("ask_start_requiring")
             if resp == "yes":
                 self.speak_dialog("confirm_require_ww", private=True)
-                self.bus.emit(message.forward("neon.wake_words_state",
-                                              {"enabled": True}))
+                self.bus.wait_for_response(message.forward(
+                    "neon.wake_words_state", {"enabled": True}))
             else:
                 self.speak_dialog("not_doing_anything", private=True)
         else:
