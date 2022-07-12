@@ -42,19 +42,19 @@ from mycroft.skills.skill_loader import SkillLoader
 
 
 WW_STATE = True
+bus = FakeBus()
 
 
-def _mock_get_response(message):
-    return message.response({'enabled': WW_STATE})
+def _ww_enabled(message):
+    bus.emit(message.response({'enabled': WW_STATE}))
 
 
 class TestSkill(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        bus = FakeBus()
-        bus.wait_for_response = _mock_get_response
         bus.run_in_thread()
+        bus.on('neon.query_wake_words_state', _ww_enabled)
         skill_loader = SkillLoader(bus, dirname(dirname(__file__)))
         skill_loader.load()
         cls.skill = skill_loader.instance
@@ -250,6 +250,7 @@ class TestSkill(unittest.TestCase):
             self.assertEqual(msg.context, message.context)
             global WW_STATE
             WW_STATE = False
+            self.skill.bus.emit(msg.response())
 
         def ask_yesno(*args):
             dialog = args[0]
@@ -284,6 +285,7 @@ class TestSkill(unittest.TestCase):
             self.assertEqual(msg.msg_type, "neon.wake_words_state")
             self.assertEqual(msg.data, {"enabled": False})
             self.assertEqual(msg.context, message.context)
+            self.skill.bus.emit(msg.response())
 
         def ask_yesno(*args):
             dialog = args[0]
@@ -319,6 +321,7 @@ class TestSkill(unittest.TestCase):
             self.assertEqual(msg.msg_type, "neon.wake_words_state")
             self.assertEqual(msg.data, {"enabled": False})
             self.assertEqual(msg.context, message.context)
+            self.skill.bus.emit(msg.response())
 
         def ask_yesno(*args):
             dialog = args[0]
@@ -364,6 +367,7 @@ class TestSkill(unittest.TestCase):
             self.assertEqual(msg.msg_type, "neon.wake_words_state")
             self.assertEqual(msg.data, {"enabled": True})
             self.assertEqual(msg.context, message.context)
+            self.skill.bus.emit(msg.response())
 
         def ask_yesno(*args):
             dialog = args[0]
@@ -398,6 +402,7 @@ class TestSkill(unittest.TestCase):
             self.assertEqual(msg.msg_type, "neon.wake_words_state")
             self.assertEqual(msg.data, {"enabled": True})
             self.assertEqual(msg.context, message.context)
+            self.skill.bus.emit(msg.response())
 
         def ask_yesno(*args):
             dialog = args[0]
@@ -432,6 +437,7 @@ class TestSkill(unittest.TestCase):
             self.assertEqual(msg.msg_type, "neon.wake_words_state")
             self.assertEqual(msg.data, {"enabled": True})
             self.assertEqual(msg.context, message.context)
+            self.skill.bus.emit(msg.response())
 
         def ask_yesno(*args):
             dialog = args[0]

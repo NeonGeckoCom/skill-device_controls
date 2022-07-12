@@ -52,6 +52,7 @@ class DeviceControlCenterSkill(NeonSkill):
     def ww_enabled(self):
         resp = self.bus.wait_for_response(Message("neon.query_wake_words_state"))
         if not resp:
+            LOG.warning("No WW Status reported")
             return None
         if resp.data.get('enabled', True):
             return True
