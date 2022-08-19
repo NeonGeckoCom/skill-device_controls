@@ -178,7 +178,7 @@ class DeviceControlCenterSkill(NeonSkill):
             self.bus.emit(Message("neon.shutdown"))
         elif action == SystemCommand.RESTART:
             self.speak_dialog("confirm_restarting", private=True, wait=True)
-            self.bus.emit(Message("system.restart"))
+            self.bus.emit(Message("system.reboot"))
 
 
 def create_skill():
