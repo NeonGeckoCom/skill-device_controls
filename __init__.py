@@ -172,14 +172,13 @@ class DeviceControlCenterSkill(NeonSkill):
         """
         if action == SystemCommand.SHUTDOWN:
             self.speak_dialog("confirm_shutdown", private=True, wait=True)
-            os.system("shutdown now -h")
+            self.bus.emit(Message("system.shutdown"))
         elif action == SystemCommand.EXIT:
             self.speak_dialog("confirm_exiting", private=True, wait=True)
             self.bus.emit(Message("neon.shutdown"))
         elif action == SystemCommand.RESTART:
             self.speak_dialog("confirm_restarting", private=True, wait=True)
-            self.bus.emit(Message("neon.restart"))
-            # TODO: register a listener for this DM
+            self.bus.emit(Message("system.restart"))
 
 
 def create_skill():
