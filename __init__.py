@@ -58,7 +58,7 @@ class DeviceControlCenterSkill(NeonSkill):
             return True
         return False
 
-    @intent_handler(IntentBuilder("exit_shutdown_intent").require("request")
+    @intent_handler(IntentBuilder("ExitShutdownIntent").require("request")
                     .one_of("exit", "shutdown", "restart"))
     def handle_exit_shutdown_intent(self, message):
         """
@@ -85,9 +85,9 @@ class DeviceControlCenterSkill(NeonSkill):
         elif response:
             self._do_exit_shutdown(action)
 
-    @intent_handler(IntentBuilder("skip_ww").require("ww")
+    @intent_handler(IntentBuilder("SkipWWIntent").require("ww")
                     .require("start_sww"))
-    @intent_handler(IntentBuilder("start_solo_mode").require("start")
+    @intent_handler(IntentBuilder("SoloModeIntent").one_of("start", "enable")
                     .require("solo"))
     def handle_skip_wake_words(self, message):
         """
@@ -107,8 +107,8 @@ class DeviceControlCenterSkill(NeonSkill):
             else:
                 self.speak_dialog("already_skipping", private=True)
 
-    @intent_handler(IntentBuilder("use_ww").require("ww").require("stop_sww"))
-    @intent_handler(IntentBuilder("stop_solo_mode").require("stop")
+    @intent_handler(IntentBuilder("UseWWIntent").require("ww").require("stop_sww"))
+    @intent_handler(IntentBuilder("StopSoloModeIntent").one_of("stop", "disable")
                     .require("solo"))
     def handle_use_wake_words(self, message):
         """
@@ -127,7 +127,7 @@ class DeviceControlCenterSkill(NeonSkill):
         else:
             self.speak_dialog("already_requiring", private=True)
 
-    @intent_handler(IntentBuilder("ConfirmListening")
+    @intent_handler(IntentBuilder("ConfirmListeningIntent")
                     .one_of("enable", "disable").require("listening").build())
     def handle_confirm_listening(self, message):
         """
@@ -144,7 +144,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                       {"enabled": enabled}))
         # TODO: Handle this event DM
 
-    @intent_handler(IntentBuilder("ShowDebug")
+    @intent_handler(IntentBuilder("ShowDebugIntent")
                     .one_of("enable", "disable").require("debug").build())
     def handle_show_debug(self, message):
         enabled = True if message.data.get("enable") else False
