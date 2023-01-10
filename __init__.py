@@ -26,8 +26,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
-
+from typing import Optional
 from enum import Enum
 from adapt.intent import IntentBuilder
 from random import randint
@@ -35,7 +34,8 @@ from mycroft_bus_client import Message
 from ovos_utils import classproperty
 from ovos_utils.log import LOG
 from ovos_utils.process_utils import RuntimeRequirements
-from neon_utils.skills.neon_skill import NeonSkill
+from neon_utils.message_utils import dig_for_message
+from neon_utils.skills.neon_skill import NeonSkill, LOG
 from neon_utils.validator_utils import numeric_confirmation_validator
 
 from mycroft.skills import intent_handler
@@ -64,7 +64,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                    no_gui_fallback=True)
 
     @property
-    def ww_enabled(self):
+    def ww_enabled(self) -> Optional[bool]:
         resp = self.bus.wait_for_response(Message("neon.query_wake_words_state"))
         if not resp:
             LOG.warning("No WW Status reported")
@@ -72,6 +72,12 @@ class DeviceControlCenterSkill(NeonSkill):
         if resp.data.get('enabled', True):
             return True
         return False
+
+    @property
+    def hotwords(self) -> Optional[dict]:
+        message = dig_for_message() or Message("neon.get_wake_words")
+        resp = self.bus.wait_for_response(message.forward("neon.get_wake_words"))
+        return resp.data if resp else None
 
     @intent_handler(IntentBuilder("ExitShutdownIntent").require("request")
                     .one_of("exit", "shutdown", "restart"))
