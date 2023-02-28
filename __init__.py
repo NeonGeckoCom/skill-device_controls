@@ -227,6 +227,7 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("error_ww_change_failed")
             return
 
+        config_patch = {"hotwords": {matched_ww: {"active": True}}}
         if len(enabled_ww) == 1:
             old_ww = enabled_ww[0]
             LOG.debug(f"Disable old WW: {old_ww}")
@@ -234,6 +235,8 @@ class DeviceControlCenterSkill(NeonSkill):
                 "neon.disable_wake_word", {"wake_word": old_ww}))
             if not resp or resp.data.get("error"):
                 LOG.error(resp)
+            else:
+                config_patch["hotwords"][old_ww]["active"] = False
             self.speak_dialog("confirm_ww_changed",
                               {"wake_word": matched_ww.replace("_", " ")})
         else:
@@ -241,9 +244,8 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("confirm_ww_changed",
                               {"wake_word": matched_ww.replace("_", " ")})
 
-        LOG.info(f"Updating config: {self.config_core['hotwords']}")
         from ovos_config.config import update_mycroft_config
-        update_mycroft_config(self.config_core)
+        update_mycroft_config(config_patch)
 
     def stop(self):
         pass
