@@ -240,7 +240,7 @@ class DeviceControlCenterSkill(NeonSkill):
             old_ww = enabled_ww[0]
             LOG.debug(f"Disable old WW: {old_ww}")
             resp = self.bus.wait_for_response(message.forward(
-                "neon.disable_wake_word", {"wake_word": old_ww}))
+                "neon.disable_wake_word", {"wake_word": old_ww}), timeout=30)
             if not resp or resp.data.get("error"):
                 LOG.error(resp)
 
