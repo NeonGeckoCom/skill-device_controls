@@ -236,7 +236,7 @@ class DeviceControlCenterSkill(NeonSkill):
             if not resp or resp.data.get("error"):
                 LOG.error(resp)
             else:
-                config_patch["hotwords"][old_ww]["active"] = False
+                config_patch["hotwords"][old_ww] = {"active": False}
             self.speak_dialog("confirm_ww_changed",
                               {"wake_word": matched_ww.replace("_", " ")})
         else:
