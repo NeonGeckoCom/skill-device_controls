@@ -83,7 +83,7 @@ class DeviceControlCenterSkill(NeonSkill):
         """
         message = dig_for_message() or Message("neon.get_wake_words")
         resp = self.bus.wait_for_response(
-            message.forward("neon.get_wake_words"))
+            message.forward("neon.get_wake_words"), "neon.wake_words")
         return resp.data if resp else None
 
     @intent_handler(IntentBuilder("ExitShutdownIntent").require("request")

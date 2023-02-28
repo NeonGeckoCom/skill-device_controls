@@ -529,7 +529,8 @@ class TestSkill(unittest.TestCase):
                                        {"utterance": "change my wake word"})
 
         def _handle_get_ww(message):
-            self.skill.bus.emit(message.response(wake_word_config))
+            self.skill.bus.emit(message.reply("neon.wake_words",
+                                              wake_word_config))
 
         # Test API not available
         self.skill.change_ww(message_change_hey_neon)
