@@ -221,7 +221,7 @@ class DeviceControlCenterSkill(NeonSkill):
                               {"requested_ww": matched_ww.replace("_", " ")})
             return
         resp = self.bus.wait_for_response(message.forward(
-            "neon.enable_wake_word", {"wake_word": matched_ww}))
+            "neon.enable_wake_word", {"wake_word": matched_ww}), 30)
         if not resp or resp.data.get('error'):
             LOG.error(f"Error response resp={resp}")
             self.speak_dialog("error_ww_change_failed")
@@ -240,6 +240,10 @@ class DeviceControlCenterSkill(NeonSkill):
             LOG.info("Added WW to enabled wake words")
             self.speak_dialog("confirm_ww_changed",
                               {"wake_word": matched_ww.replace("_", " ")})
+
+        LOG.info(f"Updating config: {self.config_core['hotwords']}")
+        from ovos_config.config import update_mycroft_config
+        update_mycroft_config(self.config_core)
 
     def stop(self):
         pass
