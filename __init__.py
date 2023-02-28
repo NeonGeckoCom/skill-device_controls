@@ -240,7 +240,7 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("confirm_ww_changed",
                               {"wake_word": matched_ww.replace("_", " ")})
         else:
-            LOG.info("Added WW to enabled wake words")
+            LOG.info(f"Added WW to enabled wake words: {enabled_ww}")
             self.speak_dialog("confirm_ww_changed",
                               {"wake_word": matched_ww.replace("_", " ")})
 
