@@ -6,6 +6,7 @@ languages:
 
 # vocab is lowercase .voc file basenames
 vocab:
+  - change
   - "debug"
   - "disable"
   - "enable"
@@ -41,9 +42,16 @@ dialog:
   - "confirm_shutdown"
   - "confirm_skip_ww"
   - "not_doing_anything"
+  - confirm_ww_changed
+  - error_invalid_ww_requested
+  - error_no_ww_api
+  - error_no_ww_heard
+  - error_ww_already_enabled
+  - error_ww_change_failed
 
 # regex entities, not necessarily filenames
-regex: []
+regex:
+  - rx_wakeword
 intents:
   # Padatious intents are the `.intent` file names
   padatious: []
@@ -56,3 +64,4 @@ intents:
     - 'StopSoloModeIntent'
     - 'ConfirmListeningIntent'
     - 'ShowDebugIntent'
+    - ChangeWakeWordIntent

@@ -68,3 +68,11 @@ en-us:
     - disable debug display
     - turn on neon brain
     - turn off debug window
+  ChangeWakeWordIntent:
+    - change my wake word to hey mycroft:
+        rx_wakeword: hey mycroft
+    - set my wake word as hey neon:
+        rx_wakeword: hey neon
+    - update my wakeword to hello:
+        rx_wakeword: hello
+    - change my wake word okay
