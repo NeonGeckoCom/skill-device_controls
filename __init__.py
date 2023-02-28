@@ -221,7 +221,7 @@ class DeviceControlCenterSkill(NeonSkill):
                               {"requested_ww": matched_ww.replace("_", " ")})
             return
         resp = self.bus.wait_for_response(message.forward(
-            "neon.enable_wake_word", {"wake_word": matched_ww}), 30)
+            "neon.enable_wake_word", {"wake_word": matched_ww}), timeout=30)
         if not resp or resp.data.get('error'):
             LOG.error(f"Error response resp={resp}")
             self.speak_dialog("error_ww_change_failed")
