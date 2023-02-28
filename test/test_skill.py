@@ -554,6 +554,18 @@ class TestSkill(unittest.TestCase):
         self.skill.speak_dialog.assert_called_with("error_ww_already_enabled",
                                                    {"requested_ww": "hey neon"})
 
+        # Test already enabled alternate utterance
+        message_change_hey_neon_alt = Message(
+            "test", {"rx_wakeword": "haney on",
+                     "utterance": "change my wakeword to haney on",
+                     "utterances": [
+                         "change my wakeword to haney on",
+                         "change my wake word to hey neon"
+                     ]})
+        self.skill.change_ww(message_change_hey_neon_alt)
+        self.skill.speak_dialog.assert_called_with("error_ww_already_enabled",
+                                                   {"requested_ww": "hey neon"})
+
         # Test change success
         def _handle_enable_ww(message):
             ww = message.data['wake_word']

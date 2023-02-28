@@ -209,6 +209,15 @@ class DeviceControlCenterSkill(NeonSkill):
                 matched_ww = ww
                 break
         if not matched_ww:
+            LOG.warning("Checking alternate transcriptions for a wake word")
+            utterances = message.data.get('utterances', [])
+            for ww in available_ww.keys():
+                test_ww = ww.lower().replace('_', ' ')
+                if any([test_ww in utt.lower() for utt in utterances]):
+                    matched_ww = ww
+                    LOG.debug(f"Found ww: {matched_ww}")
+                    break
+        if not matched_ww:
             LOG.debug(f"No valid ww matched in: {requested_ww}")
             if message.data.get("rx_wakeword"):
                 self.speak_dialog("error_invalid_ww_requested",
