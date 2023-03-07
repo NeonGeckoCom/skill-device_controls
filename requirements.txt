@@ -1,2 +1,3 @@
-neon_utils~=1.0,>=1.2.3
+# neon_utils~=1.0,>=1.2.3
+neon-utils@git+https://github.com/neongeckocom/neon-utils@PATCH_ConfigReload
 ovos_utils~=0.0.28
