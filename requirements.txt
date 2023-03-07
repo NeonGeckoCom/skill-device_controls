@@ -1,2 +1,2 @@
-neon_utils~=1.0
+neon_utils~=1.0,>=1.2.3
 ovos_utils~=0.0.28
