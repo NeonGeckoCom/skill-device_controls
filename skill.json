@@ -16,7 +16,7 @@
     "systemDeps": false,
     "requirements": {
         "python": [
-            "neon-utils@git+https://github.com/neongeckocom/neon-utils@PATCH_ConfigReload",
+            "neon_utils~=1.0,>=1.2.4a0",
             "ovos_utils~=0.0.28"
         ],
         "system": {},
