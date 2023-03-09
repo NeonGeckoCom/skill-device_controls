@@ -1,2 +1,3 @@
-neon_utils~=1.0,>=1.2.4a0
+neon_utils[network,configuration]~=1.0,>=1.2.4a0
+# TODO: Remove extras that are patching alpha resolution
 ovos_utils~=0.0.28
