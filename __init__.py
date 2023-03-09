@@ -26,13 +26,16 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
-
+from typing import Optional
 from enum import Enum
 from adapt.intent import IntentBuilder
 from random import randint
 from mycroft_bus_client import Message
-from neon_utils.skills.neon_skill import NeonSkill, LOG
+from ovos_utils import classproperty
+from ovos_utils.log import LOG
+from ovos_utils.process_utils import RuntimeRequirements
+from neon_utils.message_utils import dig_for_message
+from neon_utils.skills.neon_skill import NeonSkill
 from neon_utils.validator_utils import numeric_confirmation_validator
 
 from mycroft.skills import intent_handler
@@ -48,8 +51,23 @@ class DeviceControlCenterSkill(NeonSkill):
     def __init__(self):
         super(DeviceControlCenterSkill, self).__init__(name="DeviceControlCenterSkill")
 
+    @classproperty
+    def runtime_requirements(self):
+        return RuntimeRequirements(network_before_load=False,
+                                   internet_before_load=False,
+                                   gui_before_load=False,
+                                   requires_internet=False,
+                                   requires_network=False,
+                                   requires_gui=False,
+                                   no_internet_fallback=True,
+                                   no_network_fallback=True,
+                                   no_gui_fallback=True)
+
     @property
-    def ww_enabled(self):
+    def ww_enabled(self) -> Optional[bool]:
+        """
+        Get the current wake words state.
+        """
         resp = self.bus.wait_for_response(Message("neon.query_wake_words_state"))
         if not resp:
             LOG.warning("No WW Status reported")
@@ -58,11 +76,22 @@ class DeviceControlCenterSkill(NeonSkill):
             return True
         return False
 
-    @intent_handler(IntentBuilder("exit_shutdown_intent").require("request")
+    @property
+    def wakewords(self) -> Optional[dict]:
+        """
+        Get a dict of available configured wake words.
+        """
+        message = dig_for_message() or Message("neon.get_wake_words")
+        resp = self.bus.wait_for_response(
+            message.forward("neon.get_wake_words"), "neon.wake_words")
+        return resp.data if resp else None
+
+    @intent_handler(IntentBuilder("ExitShutdownIntent").require("request")
                     .one_of("exit", "shutdown", "restart"))
     def handle_exit_shutdown_intent(self, message):
         """
-        Handles a request to exit or shutdown. This action will be confirmed numerically before executing
+        Handles a request to exit or shutdown.
+        This action will be confirmed numerically before executing.
         :param message: message object associated with request
         """
         confirm_number = str(randint(100, 999))
@@ -85,9 +114,9 @@ class DeviceControlCenterSkill(NeonSkill):
         elif response:
             self._do_exit_shutdown(action)
 
-    @intent_handler(IntentBuilder("skip_ww").require("ww")
+    @intent_handler(IntentBuilder("SkipWWIntent").require("ww")
                     .require("start_sww"))
-    @intent_handler(IntentBuilder("start_solo_mode").require("start")
+    @intent_handler(IntentBuilder("SoloModeIntent").one_of("start", "enable")
                     .require("solo"))
     def handle_skip_wake_words(self, message):
         """
@@ -107,9 +136,10 @@ class DeviceControlCenterSkill(NeonSkill):
             else:
                 self.speak_dialog("already_skipping", private=True)
 
-    @intent_handler(IntentBuilder("use_ww").require("ww").require("stop_sww"))
-    @intent_handler(IntentBuilder("stop_solo_mode").require("stop")
-                    .require("solo"))
+    @intent_handler(IntentBuilder("UseWWIntent").require("ww")
+                    .require("stop_sww"))
+    @intent_handler(IntentBuilder("StopSoloModeIntent")
+                    .one_of("stop", "disable").require("solo"))
     def handle_use_wake_words(self, message):
         """
         Enable wake words and stop always-listening recognizer
@@ -127,7 +157,7 @@ class DeviceControlCenterSkill(NeonSkill):
         else:
             self.speak_dialog("already_requiring", private=True)
 
-    @intent_handler(IntentBuilder("ConfirmListening")
+    @intent_handler(IntentBuilder("ConfirmListeningIntent")
                     .one_of("enable", "disable").require("listening").build())
     def handle_confirm_listening(self, message):
         """
@@ -144,7 +174,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                       {"enabled": enabled}))
         # TODO: Handle this event DM
 
-    @intent_handler(IntentBuilder("ShowDebug")
+    @intent_handler(IntentBuilder("ShowDebugIntent")
                     .one_of("enable", "disable").require("debug").build())
     def handle_show_debug(self, message):
         enabled = True if message.data.get("enable") else False
@@ -157,10 +187,69 @@ class DeviceControlCenterSkill(NeonSkill):
                                       {"enabled": enabled}))
         # TODO: Handle this event DM
 
-    # TODO: Write Intent
+    @intent_handler(IntentBuilder("ChangeWakeWordIntent")
+                    .require("change").require("ww").optionally("rx_wakeword"))
     def change_ww(self, message):
-        # TODO: Add rx parsing, emit event
-        pass
+        """
+        Handle a user request to change their configured wake word.
+        """
+        requested_ww = message.data.get("rx_wakeword") or \
+            message.data.get("utterance")
+        available_ww = self.wakewords
+        if not available_ww:
+            LOG.warning(f"Wake Word API Not Available")
+            self.speak_dialog("error_no_ww_api")
+            return
+        enabled_ww = [ww for ww in available_ww.keys() if
+                      available_ww[ww].get('active')]
+        matched_ww = None
+        for ww in available_ww.keys():
+            if ww.lower().replace('_', ' ') in requested_ww.lower():
+                LOG.debug(f"matched: {ww}")
+                matched_ww = ww
+                break
+        if not matched_ww:
+            LOG.warning("Checking alternate transcriptions for a wake word")
+            utterances = message.data.get('utterances', [])
+            for ww in available_ww.keys():
+                test_ww = ww.lower().replace('_', ' ')
+                if any([test_ww in utt.lower() for utt in utterances]):
+                    matched_ww = ww
+                    LOG.debug(f"Found ww: {matched_ww}")
+                    break
+        if not matched_ww:
+            LOG.debug(f"No valid ww matched in: {requested_ww}")
+            if message.data.get("rx_wakeword"):
+                self.speak_dialog("error_invalid_ww_requested",
+                                  {"requested_ww": requested_ww})
+            else:
+                self.speak_dialog("error_no_ww_heard")
+            return
+        if matched_ww in enabled_ww:
+            self.speak_dialog("error_ww_already_enabled",
+                              {"requested_ww": matched_ww.replace("_", " ")})
+            return
+        resp = self.bus.wait_for_response(message.forward(
+            "neon.enable_wake_word", {"wake_word": matched_ww}), timeout=30)
+        if not resp or resp.data.get('error'):
+            LOG.error(f"Error response resp={resp}")
+            self.speak_dialog("error_ww_change_failed")
+            return
+
+        if len(enabled_ww) == 1:
+            old_ww = enabled_ww[0]
+            LOG.debug(f"Disable old WW: {old_ww}")
+            resp = self.bus.wait_for_response(message.forward(
+                "neon.disable_wake_word", {"wake_word": old_ww}), timeout=30)
+            if not resp or resp.data.get("error"):
+                LOG.error(resp)
+
+            self.speak_dialog("confirm_ww_changed",
+                              {"wake_word": matched_ww.replace("_", " ")})
+        else:
+            LOG.info(f"Added WW to enabled wake words: {enabled_ww}")
+            self.speak_dialog("confirm_ww_changed",
+                              {"wake_word": matched_ww.replace("_", " ")})
 
     def stop(self):
         pass

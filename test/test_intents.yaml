@@ -1,0 +1,78 @@
+# Specify intents to test here. Valid test cases are as follows:
+
+# Basic intent match tests only:
+#lang:
+#  intent_name:
+#    - example utterance
+#    - other example utterance
+
+# Intent tests with expected vocab/entity matches:
+#lang:
+#  intent_name:
+#    - example_utterance:
+#        - expected vocab name
+#        - other expected vocab name
+
+# Intent tests with specific vocab/entity extraction tests:
+#lang:
+#  intent_name:
+#    - example_utterance:
+#        - expected_vocab_key: expected_vocab_value
+#        - expected_entity_key: expected_entity_value
+
+
+en-us:
+  ExitShutdownIntent:
+  - I want you to exit:
+      - exit
+  - I need you to restart:
+      - restart
+  - Neon shut down please:
+      - shutdown
+  SkipWWIntent:
+    - start skipping wake words
+    - skip wake words
+    - begin skipping wake words
+  SoloModeIntent:
+    - start solo mode
+    - enter solo mode
+    - enable solo mode
+    - begin solo mode
+    - allow solo mode
+  UseWWIntent:
+    - use wake words
+    - require wake words
+    - start using wake words
+    - quit skipping wake words
+  StopSoloModeIntent:
+    - exit solo mode
+    - end solo mode
+    - disable solo mode
+    - stop solo mode
+    - turn off solo mode
+  ConfirmListeningIntent:
+    - enable listening confirmation:
+        - enable
+    - disable listening confirmations:
+        - disable
+    - turn on recording confirmations:
+        - enable
+    - turn off recording sounds:
+        - disable
+    - enable confirmation sounds:
+        - enable
+    - disable confirmation sound:
+        - disable
+  ShowDebugIntent:
+    - enable debugging view
+    - disable debug display
+    - turn on neon brain
+    - turn off debug window
+  ChangeWakeWordIntent:
+    - change my wake word to hey mycroft:
+        rx_wakeword: hey mycroft
+    - set my wake word as hey neon:
+        rx_wakeword: hey neon
+    - update my wakeword to hello:
+        rx_wakeword: hello
+    - change my wake word okay

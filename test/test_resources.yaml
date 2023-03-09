@@ -1,0 +1,67 @@
+# Specify resources to test here.
+
+# Specify languages to be tested
+languages:
+  - "en-us"
+
+# vocab is lowercase .voc file basenames
+vocab:
+  - change
+  - "debug"
+  - "disable"
+  - "enable"
+  - "exit"
+  - "listening"
+  - "no"
+  - "request"
+  - "restart"
+  - "shutdown"
+  - "solo"
+  - "start"
+  - "start_sww"
+  - "stop"
+  - "stop_sww"
+  - "ww"
+
+# dialog is .dialog file basenames (case-sensitive)
+dialog:
+  - "action_not_confirmed"
+  - "already_requiring"
+  - "already_skipping"
+  - "ask_exit_shutdown"
+  - "ask_start_requiring"
+  - "ask_start_skipping"
+  - "confirm_brain_disabled"
+  - "confirm_brain_enabled"
+  - "confirm_cancel"
+  - "confirm_exiting"
+  - "confirm_listening_disabled"
+  - "confirm_listening_enabled"
+  - "confirm_require_ww"
+  - "confirm_restarting"
+  - "confirm_shutdown"
+  - "confirm_skip_ww"
+  - "not_doing_anything"
+  - confirm_ww_changed
+  - error_invalid_ww_requested
+  - error_no_ww_api
+  - error_no_ww_heard
+  - error_ww_already_enabled
+  - error_ww_change_failed
+
+# regex entities, not necessarily filenames
+regex:
+  - rx_wakeword
+intents:
+  # Padatious intents are the `.intent` file names
+  padatious: []
+  # Adapt intents are the name passed to the constructor
+  adapt:
+    - 'ExitShutdownIntent'
+    - 'SkipWWIntent'
+    - 'SoloModeIntent'
+    - 'UseWWIntent'
+    - 'StopSoloModeIntent'
+    - 'ConfirmListeningIntent'
+    - 'ShowDebugIntent'
+    - ChangeWakeWordIntent

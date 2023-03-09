@@ -26,6 +26,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import os
+import json
 import shutil
 import unittest
 from threading import Event
@@ -514,6 +516,96 @@ class TestSkill(unittest.TestCase):
         self.skill.speak_dialog.assert_called_with("confirm_brain_disabled")
         update_event.wait(3)
         self.assertFalse(debug_state)
+
+    def test_handle_change_ww(self):
+        wake_word_config = {"hey_mycroft": {"active": False},
+                            "hey_neon": {"active": True}}
+
+        message_change_hey_mycroft = Message("test",
+                                             {"rx_wakeword": "hey mycroft"})
+        message_change_hey_neon = Message("test", {"rx_wakeword": "Hey Neon"})
+        message_change_invalid_ww = Message("test", {"rx_wakeword": "Nothing"})
+        message_change_no_ww = Message("test",
+                                       {"utterance": "change my wake word"})
+
+        def _handle_get_ww(message):
+            self.skill.bus.emit(message.reply("neon.wake_words",
+                                              wake_word_config))
+
+        # Test API not available
+        self.skill.change_ww(message_change_hey_neon)
+        self.skill.speak_dialog.assert_called_with("error_no_ww_api")
+        self.skill.change_ww(message_change_no_ww)
+        self.skill.speak_dialog.assert_called_with("error_no_ww_api")
+
+        self.skill.bus.on("neon.get_wake_words", _handle_get_ww)
+
+        # Test no WW Requested
+        self.skill.change_ww(message_change_no_ww)
+        self.skill.speak_dialog.assert_called_with("error_no_ww_heard")
+
+        # Test invalid WW Requested
+        self.skill.change_ww(message_change_invalid_ww)
+        self.skill.speak_dialog.assert_called_with("error_invalid_ww_requested",
+                                                   {"requested_ww": "Nothing"})
+
+        # Test already enabled
+        self.skill.change_ww(message_change_hey_neon)
+        self.skill.speak_dialog.assert_called_with("error_ww_already_enabled",
+                                                   {"requested_ww": "hey neon"})
+
+        # Test already enabled alternate utterance
+        message_change_hey_neon_alt = Message(
+            "test", {"rx_wakeword": "haney on",
+                     "utterance": "change my wakeword to haney on",
+                     "utterances": [
+                         "change my wakeword to haney on",
+                         "change my wake word to hey neon"
+                     ]})
+        self.skill.change_ww(message_change_hey_neon_alt)
+        self.skill.speak_dialog.assert_called_with("error_ww_already_enabled",
+                                                   {"requested_ww": "hey neon"})
+
+        # Test change success
+        def _handle_enable_ww(message):
+            ww = message.data['wake_word']
+            wake_word_config[ww]['active'] = True
+            self.skill.bus.emit(message.response({"error": False,
+                                                  "active": True,
+                                                  "wake_word": ww}))
+
+        def _handle_disable_ww(message):
+            ww = message.data['wake_word']
+            wake_word_config[ww]['active'] = False
+            self.skill.bus.emit(message.response({"error": False,
+                                                  "active": False,
+                                                  "wake_word": ww}))
+
+        self.skill.bus.once("neon.enable_wake_word", _handle_enable_ww)
+        self.skill.bus.once("neon.disable_wake_word", _handle_disable_ww)
+
+        self.skill.change_ww(message_change_hey_mycroft)
+        self.assertTrue(wake_word_config['hey_mycroft']['active'])
+        self.assertFalse(wake_word_config['hey_neon']['active'])
+        self.skill.speak_dialog.assert_called_with("confirm_ww_changed",
+                                                   {"wake_word": "hey mycroft"})
+
+        # Test change no response
+        self.skill.change_ww(message_change_hey_neon)
+        self.skill.speak_dialog.assert_called_with("error_ww_change_failed")
+
+        # Test change error response
+        def _handle_enable_ww(message):
+            self.skill.bus.emit(message.response({"error": True}))
+
+        disable_ww = Mock()
+
+        self.skill.bus.once("neon.enable_wake_word", _handle_enable_ww)
+        self.skill.bus.once("neon.disable_wake_word", disable_ww)
+
+        self.skill.change_ww(message_change_hey_neon)
+        self.skill.speak_dialog.assert_called_with("error_ww_change_failed")
+        disable_ww.assert_not_called()
 
 
 if __name__ == '__main__':

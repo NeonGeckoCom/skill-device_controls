@@ -1,0 +1,1 @@
+(as|to) (?P<rx_wakeword>.*)
