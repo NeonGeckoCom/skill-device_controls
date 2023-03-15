@@ -553,6 +553,7 @@ class TestSkill(unittest.TestCase):
         self.skill.change_ww(message_change_hey_neon)
         self.skill.speak_dialog.assert_called_with("error_ww_already_enabled",
                                                    {"requested_ww": "hey neon"})
+        self.skill.speak_dialog.reset_mock()
 
         # Test already enabled alternate utterance
         message_change_hey_neon_alt = Message(
@@ -563,6 +564,16 @@ class TestSkill(unittest.TestCase):
                          "change my wake word to hey neon"
                      ]})
         self.skill.change_ww(message_change_hey_neon_alt)
+        self.skill.speak_dialog.assert_called_with("error_ww_already_enabled",
+                                                   {"requested_ww": "hey neon"})
+        self.skill.speak_dialog.reset_mock()
+
+        # Test already enabled voc match
+        message_change_neon = Message(
+            "test", {"rx_wakeword": "neon",
+                     "utterance": "change my wakeword to neon",
+                     "utterances": []})
+        self.skill.change_ww(message_change_neon)
         self.skill.speak_dialog.assert_called_with("error_ww_already_enabled",
                                                    {"requested_ww": "hey neon"})
 

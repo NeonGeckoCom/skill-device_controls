@@ -76,3 +76,4 @@ en-us:
     - update my wakeword to hello:
         rx_wakeword: hello
     - change my wake word okay
+    - make my wake word something
