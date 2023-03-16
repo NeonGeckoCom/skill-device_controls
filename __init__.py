@@ -218,6 +218,15 @@ class DeviceControlCenterSkill(NeonSkill):
                     LOG.debug(f"Found ww: {matched_ww}")
                     break
         if not matched_ww:
+            LOG.warning("Checking for known wake words")
+            if self.voc_match(requested_ww, 'mycroft') and \
+                    'hey_mycroft' in available_ww.keys():
+                matched_ww = 'hey_mycroft'
+            elif self.voc_match(requested_ww, 'neon') and \
+                    'hey_neon' in available_ww.keys():
+                matched_ww = 'hey_neon'
+
+        if not matched_ww:
             LOG.debug(f"No valid ww matched in: {requested_ww}")
             if message.data.get("rx_wakeword"):
                 self.speak_dialog("error_invalid_ww_requested",
