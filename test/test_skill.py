@@ -96,7 +96,8 @@ class TestSkill(unittest.TestCase):
         self.assertIsInstance(self.skill, NeonSkill)
         self.assertTrue(self.skill.ww_enabled)
 
-    def test_handle_exit_shutdown_intent_exit_confirmed(self):
+    def test_handle_exit_shutdown_intent(self):
+        # Exit Confirmed
         message = Message("valid_intent", {"exit": "exit"})
 
         def get_response(*args):
@@ -124,7 +125,7 @@ class TestSkill(unittest.TestCase):
 
         self.skill.get_response = default_get_response
 
-    def test_handle_exit_shutdown_intent_shutdown_confirmed(self):
+        # Shutdown confirmed
         message = Message("valid_intent", {"shutdown": "shut down"})
 
         def get_response(*args):
@@ -152,7 +153,7 @@ class TestSkill(unittest.TestCase):
 
         self.skill.get_response = default_get_response
 
-    def test_handle_exit_shutdown_intent_restart_confirmed(self):
+        # Restart Confirmed
         message = Message("valid_intent", {"restart": "reboot"})
 
         def get_response(*args):
@@ -180,7 +181,8 @@ class TestSkill(unittest.TestCase):
 
         self.skill.get_response = default_get_response
 
-    def test_handle_exit_shutdown_intent_exit_cancelled(self):
+        # Exit Cancelled
+        self.skill._do_exit_shutdown.reset_mock()
         message = Message("valid_intent", {"exit": "exit"})
 
         def get_response(*args):
@@ -207,7 +209,7 @@ class TestSkill(unittest.TestCase):
 
         self.skill.get_response = default_get_response
 
-    def test_handle_exit_shutdown_intent_exit_no_response(self):
+        # Exit no response
         message = Message("valid_intent", {"exit": "exit"})
 
         def get_response(*args):
@@ -234,6 +236,33 @@ class TestSkill(unittest.TestCase):
         self.skill._do_exit_shutdown.assert_not_called()
 
         self.skill.get_response = default_get_response
+
+    def test_handle_exit_intent(self):
+        real_method = self.skill.handle_exit_shutdown_intent
+        self.skill.handle_exit_shutdown_intent = Mock()
+        msg = Message("test")
+        self.skill.handle_exit_intent(msg)
+        self.skill.handle_exit_shutdown_intent.assert_called_once_with(msg)
+        self.assertTrue(msg.data.get('exit'))
+        self.skill.handle_exit_shutdown_intent = real_method
+
+    def test_handle_restart_intent(self):
+        real_method = self.skill.handle_exit_shutdown_intent
+        self.skill.handle_exit_shutdown_intent = Mock()
+        msg = Message("test")
+        self.skill.handle_restart_intent(msg)
+        self.skill.handle_exit_shutdown_intent.assert_called_once_with(msg)
+        self.assertTrue(msg.data.get('restart'))
+        self.skill.handle_exit_shutdown_intent = real_method
+
+    def test_handle_shutdown_intent(self):
+        real_method = self.skill.handle_exit_shutdown_intent
+        self.skill.handle_exit_shutdown_intent = Mock()
+        msg = Message("test")
+        self.skill.handle_shutdown_intent(msg)
+        self.skill.handle_exit_shutdown_intent.assert_called_once_with(msg)
+        self.assertTrue(msg.data.get('shutdown'))
+        self.skill.handle_exit_shutdown_intent = real_method
 
     def test_handle_skip_wake_words_confirmed(self):
         global WW_STATE
