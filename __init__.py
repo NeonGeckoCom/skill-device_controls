@@ -38,7 +38,7 @@ from neon_utils.message_utils import dig_for_message
 from neon_utils.skills.neon_skill import NeonSkill
 from neon_utils.validator_utils import numeric_confirmation_validator
 
-from mycroft.skills import intent_handler
+from mycroft.skills import intent_handler, intent_file_handler
 
 
 class SystemCommand(Enum):
@@ -113,6 +113,21 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("confirm_cancel", private=True)
         elif response:
             self._do_exit_shutdown(action)
+
+    @intent_file_handler("exit.intent")
+    def handle_exit_intent(self, message):
+        message.data['exit'] = True
+        self.handle_exit_shutdown_intent(message)
+
+    @intent_file_handler("restart.intent")
+    def handle_restart_intent(self, message):
+        message.data['restart'] = True
+        self.handle_exit_shutdown_intent(message)
+
+    @intent_file_handler("shutdown.intent")
+    def handle_shutdown_intent(self, message):
+        message.data['shutdown'] = True
+        self.handle_exit_shutdown_intent(message)
 
     @intent_handler(IntentBuilder("SkipWWIntent").require("ww")
                     .require("start_sww"))
