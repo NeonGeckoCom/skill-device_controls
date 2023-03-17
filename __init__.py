@@ -204,7 +204,7 @@ class DeviceControlCenterSkill(NeonSkill):
 
     @intent_handler(IntentBuilder("ChangeWakeWordIntent")
                     .require("change").require("ww").optionally("rx_wakeword"))
-    def change_ww(self, message):
+    def handle_change_ww(self, message):
         """
         Handle a user request to change their configured wake word.
         """
