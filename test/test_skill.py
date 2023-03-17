@@ -628,7 +628,7 @@ class TestSkill(unittest.TestCase):
         self.assertTrue(wake_word_config['hey_mycroft']['active'])
         self.assertFalse(wake_word_config['hey_neon']['active'])
         self.skill.speak_dialog.assert_called_with("confirm_ww_changed",
-                                                   {"wake_word": "hey mycroft"})
+                                                   {"wake_word": "hey my-croft"})
 
         # Test change no response
         self.skill.handle_change_ww(message_change_hey_neon)
