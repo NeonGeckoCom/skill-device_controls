@@ -50,6 +50,7 @@ dialog:
   - error_no_ww_heard
   - error_ww_already_enabled
   - error_ww_change_failed
+  - confirm_ww_changing
 
 # regex entities, not necessarily filenames
 regex:
