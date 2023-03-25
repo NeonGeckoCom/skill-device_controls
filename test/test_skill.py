@@ -96,7 +96,8 @@ class TestSkill(unittest.TestCase):
         self.assertIsInstance(self.skill, NeonSkill)
         self.assertTrue(self.skill.ww_enabled)
 
-    def test_handle_exit_shutdown_intent_exit_confirmed(self):
+    def test_handle_exit_shutdown_intent(self):
+        # Exit Confirmed
         message = Message("valid_intent", {"exit": "exit"})
 
         def get_response(*args):
@@ -124,7 +125,7 @@ class TestSkill(unittest.TestCase):
 
         self.skill.get_response = default_get_response
 
-    def test_handle_exit_shutdown_intent_shutdown_confirmed(self):
+        # Shutdown confirmed
         message = Message("valid_intent", {"shutdown": "shut down"})
 
         def get_response(*args):
@@ -152,7 +153,7 @@ class TestSkill(unittest.TestCase):
 
         self.skill.get_response = default_get_response
 
-    def test_handle_exit_shutdown_intent_restart_confirmed(self):
+        # Restart Confirmed
         message = Message("valid_intent", {"restart": "reboot"})
 
         def get_response(*args):
@@ -180,7 +181,8 @@ class TestSkill(unittest.TestCase):
 
         self.skill.get_response = default_get_response
 
-    def test_handle_exit_shutdown_intent_exit_cancelled(self):
+        # Exit Cancelled
+        self.skill._do_exit_shutdown.reset_mock()
         message = Message("valid_intent", {"exit": "exit"})
 
         def get_response(*args):
@@ -207,7 +209,7 @@ class TestSkill(unittest.TestCase):
 
         self.skill.get_response = default_get_response
 
-    def test_handle_exit_shutdown_intent_exit_no_response(self):
+        # Exit no response
         message = Message("valid_intent", {"exit": "exit"})
 
         def get_response(*args):
@@ -234,6 +236,33 @@ class TestSkill(unittest.TestCase):
         self.skill._do_exit_shutdown.assert_not_called()
 
         self.skill.get_response = default_get_response
+
+    def test_handle_exit_intent(self):
+        real_method = self.skill.handle_exit_shutdown_intent
+        self.skill.handle_exit_shutdown_intent = Mock()
+        msg = Message("test")
+        self.skill.handle_exit_intent(msg)
+        self.skill.handle_exit_shutdown_intent.assert_called_once_with(msg)
+        self.assertTrue(msg.data.get('exit'))
+        self.skill.handle_exit_shutdown_intent = real_method
+
+    def test_handle_restart_intent(self):
+        real_method = self.skill.handle_exit_shutdown_intent
+        self.skill.handle_exit_shutdown_intent = Mock()
+        msg = Message("test")
+        self.skill.handle_restart_intent(msg)
+        self.skill.handle_exit_shutdown_intent.assert_called_once_with(msg)
+        self.assertTrue(msg.data.get('restart'))
+        self.skill.handle_exit_shutdown_intent = real_method
+
+    def test_handle_shutdown_intent(self):
+        real_method = self.skill.handle_exit_shutdown_intent
+        self.skill.handle_exit_shutdown_intent = Mock()
+        msg = Message("test")
+        self.skill.handle_shutdown_intent(msg)
+        self.skill.handle_exit_shutdown_intent.assert_called_once_with(msg)
+        self.assertTrue(msg.data.get('shutdown'))
+        self.skill.handle_exit_shutdown_intent = real_method
 
     def test_handle_skip_wake_words_confirmed(self):
         global WW_STATE
@@ -533,26 +562,27 @@ class TestSkill(unittest.TestCase):
                                               wake_word_config))
 
         # Test API not available
-        self.skill.change_ww(message_change_hey_neon)
+        self.skill.handle_change_ww(message_change_hey_neon)
         self.skill.speak_dialog.assert_called_with("error_no_ww_api")
-        self.skill.change_ww(message_change_no_ww)
+        self.skill.handle_change_ww(message_change_no_ww)
         self.skill.speak_dialog.assert_called_with("error_no_ww_api")
 
         self.skill.bus.on("neon.get_wake_words", _handle_get_ww)
 
         # Test no WW Requested
-        self.skill.change_ww(message_change_no_ww)
+        self.skill.handle_change_ww(message_change_no_ww)
         self.skill.speak_dialog.assert_called_with("error_no_ww_heard")
 
         # Test invalid WW Requested
-        self.skill.change_ww(message_change_invalid_ww)
+        self.skill.handle_change_ww(message_change_invalid_ww)
         self.skill.speak_dialog.assert_called_with("error_invalid_ww_requested",
                                                    {"requested_ww": "Nothing"})
 
         # Test already enabled
-        self.skill.change_ww(message_change_hey_neon)
+        self.skill.handle_change_ww(message_change_hey_neon)
         self.skill.speak_dialog.assert_called_with("error_ww_already_enabled",
                                                    {"requested_ww": "hey neon"})
+        self.skill.speak_dialog.reset_mock()
 
         # Test already enabled alternate utterance
         message_change_hey_neon_alt = Message(
@@ -562,7 +592,17 @@ class TestSkill(unittest.TestCase):
                          "change my wakeword to haney on",
                          "change my wake word to hey neon"
                      ]})
-        self.skill.change_ww(message_change_hey_neon_alt)
+        self.skill.handle_change_ww(message_change_hey_neon_alt)
+        self.skill.speak_dialog.assert_called_with("error_ww_already_enabled",
+                                                   {"requested_ww": "hey neon"})
+        self.skill.speak_dialog.reset_mock()
+
+        # Test already enabled voc match
+        message_change_neon = Message(
+            "test", {"rx_wakeword": "neon",
+                     "utterance": "change my wakeword to neon",
+                     "utterances": []})
+        self.skill.handle_change_ww(message_change_neon)
         self.skill.speak_dialog.assert_called_with("error_ww_already_enabled",
                                                    {"requested_ww": "hey neon"})
 
@@ -584,14 +624,14 @@ class TestSkill(unittest.TestCase):
         self.skill.bus.once("neon.enable_wake_word", _handle_enable_ww)
         self.skill.bus.once("neon.disable_wake_word", _handle_disable_ww)
 
-        self.skill.change_ww(message_change_hey_mycroft)
+        self.skill.handle_change_ww(message_change_hey_mycroft)
         self.assertTrue(wake_word_config['hey_mycroft']['active'])
         self.assertFalse(wake_word_config['hey_neon']['active'])
         self.skill.speak_dialog.assert_called_with("confirm_ww_changed",
-                                                   {"wake_word": "hey mycroft"})
+                                                   {"wake_word": "hey my-croft"})
 
         # Test change no response
-        self.skill.change_ww(message_change_hey_neon)
+        self.skill.handle_change_ww(message_change_hey_neon)
         self.skill.speak_dialog.assert_called_with("error_ww_change_failed")
 
         # Test change error response
@@ -603,7 +643,7 @@ class TestSkill(unittest.TestCase):
         self.skill.bus.once("neon.enable_wake_word", _handle_enable_ww)
         self.skill.bus.once("neon.disable_wake_word", disable_ww)
 
-        self.skill.change_ww(message_change_hey_neon)
+        self.skill.handle_change_ww(message_change_hey_neon)
         self.skill.speak_dialog.assert_called_with("error_ww_change_failed")
         disable_ww.assert_not_called()
 

@@ -76,3 +76,15 @@ en-us:
     - update my wakeword to hello:
         rx_wakeword: hello
     - change my wake word okay
+    - make my wake word something
+  exit.intent:
+    - exit
+  restart.intent:
+    - restart
+    - reboot
+  shutdown.intent:
+    - shutdown
+    - shut down
+    - power down
+    - turn off
+    - power off

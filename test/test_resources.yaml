@@ -6,7 +6,7 @@ languages:
 
 # vocab is lowercase .voc file basenames
 vocab:
-  - change
+  - "change"
   - "debug"
   - "disable"
   - "enable"
@@ -22,6 +22,8 @@ vocab:
   - "stop"
   - "stop_sww"
   - "ww"
+  - "mycroft"
+  - "neon"
 
 # dialog is .dialog file basenames (case-sensitive)
 dialog:
@@ -48,6 +50,7 @@ dialog:
   - error_no_ww_heard
   - error_ww_already_enabled
   - error_ww_change_failed
+  - confirm_ww_changing
 
 # regex entities, not necessarily filenames
 regex:

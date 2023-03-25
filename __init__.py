@@ -38,7 +38,7 @@ from neon_utils.message_utils import dig_for_message
 from neon_utils.skills.neon_skill import NeonSkill
 from neon_utils.validator_utils import numeric_confirmation_validator
 
-from mycroft.skills import intent_handler
+from mycroft.skills import intent_handler, intent_file_handler
 
 
 class SystemCommand(Enum):
@@ -113,6 +113,21 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("confirm_cancel", private=True)
         elif response:
             self._do_exit_shutdown(action)
+
+    @intent_file_handler("exit.intent")
+    def handle_exit_intent(self, message):
+        message.data['exit'] = True
+        self.handle_exit_shutdown_intent(message)
+
+    @intent_file_handler("restart.intent")
+    def handle_restart_intent(self, message):
+        message.data['restart'] = True
+        self.handle_exit_shutdown_intent(message)
+
+    @intent_file_handler("shutdown.intent")
+    def handle_shutdown_intent(self, message):
+        message.data['shutdown'] = True
+        self.handle_exit_shutdown_intent(message)
 
     @intent_handler(IntentBuilder("SkipWWIntent").require("ww")
                     .require("start_sww"))
@@ -189,7 +204,7 @@ class DeviceControlCenterSkill(NeonSkill):
 
     @intent_handler(IntentBuilder("ChangeWakeWordIntent")
                     .require("change").require("ww").optionally("rx_wakeword"))
-    def change_ww(self, message):
+    def handle_change_ww(self, message):
         """
         Handle a user request to change their configured wake word.
         """
@@ -218,6 +233,15 @@ class DeviceControlCenterSkill(NeonSkill):
                     LOG.debug(f"Found ww: {matched_ww}")
                     break
         if not matched_ww:
+            LOG.warning("Checking for known wake words")
+            if self.voc_match(requested_ww, 'mycroft') and \
+                    'hey_mycroft' in available_ww.keys():
+                matched_ww = 'hey_mycroft'
+            elif self.voc_match(requested_ww, 'neon') and \
+                    'hey_neon' in available_ww.keys():
+                matched_ww = 'hey_neon'
+
+        if not matched_ww:
             LOG.debug(f"No valid ww matched in: {requested_ww}")
             if message.data.get("rx_wakeword"):
                 self.speak_dialog("error_invalid_ww_requested",
@@ -229,6 +253,9 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("error_ww_already_enabled",
                               {"requested_ww": matched_ww.replace("_", " ")})
             return
+
+        self.speak_dialog("confirm_ww_changing")
+        # This has to reload the recognizer loop, so allow more time to respond
         resp = self.bus.wait_for_response(message.forward(
             "neon.enable_wake_word", {"wake_word": matched_ww}), timeout=30)
         if not resp or resp.data.get('error'):
@@ -236,6 +263,10 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("error_ww_change_failed")
             return
 
+        new_ww = matched_ww.replace('_', ' ')
+        if "mycroft" in new_ww:
+            LOG.debug("Patching 'mycroft' pronunciation")
+            new_ww = new_ww.replace('mycroft', 'my-croft')
         if len(enabled_ww) == 1:
             old_ww = enabled_ww[0]
             LOG.debug(f"Disable old WW: {old_ww}")
@@ -244,12 +275,10 @@ class DeviceControlCenterSkill(NeonSkill):
             if not resp or resp.data.get("error"):
                 LOG.error(resp)
 
-            self.speak_dialog("confirm_ww_changed",
-                              {"wake_word": matched_ww.replace("_", " ")})
+            self.speak_dialog("confirm_ww_changed", {"wake_word": new_ww})
         else:
             LOG.info(f"Added WW to enabled wake words: {enabled_ww}")
-            self.speak_dialog("confirm_ww_changed",
-                              {"wake_word": matched_ww.replace("_", " ")})
+            self.speak_dialog("confirm_ww_changed", {"wake_word": new_ww})
 
     def stop(self):
         pass
