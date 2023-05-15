@@ -256,11 +256,13 @@ class DeviceControlCenterSkill(NeonSkill):
                 LOG.info(f"Multiple WW active")
                 for ww in enabled_ww:
                     if ww != matched_ww:
+                        spoken_ww = ww.replace("_", " ")
                         resp = self.ask_yesno("ask_disable_ww",
-                                              {"ww": ww.replace("_", " ")})
+                                              {"ww": spoken_ww})
                         if resp == "yes":
                             if self._disable_wake_word(ww, message):
-                                self.speak_dialog("confirm_ww_disabled")
+                                self.speak_dialog("confirm_ww_disabled",
+                                                  {"ww": spoken_ww})
                             else:
                                 pass
                                 # TODO: Speak error
