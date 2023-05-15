@@ -51,6 +51,8 @@ dialog:
   - error_ww_already_enabled
   - error_ww_change_failed
   - confirm_ww_changing
+  - ask_disable_ww
+  - confirm_ww_disabled
 
 # regex entities, not necessarily filenames
 regex:
