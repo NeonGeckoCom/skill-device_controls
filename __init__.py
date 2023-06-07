@@ -252,15 +252,27 @@ class DeviceControlCenterSkill(NeonSkill):
         if matched_ww in enabled_ww:
             self.speak_dialog("error_ww_already_enabled",
                               {"requested_ww": matched_ww.replace("_", " ")})
+            if len(enabled_ww) > 1:
+                LOG.info(f"Multiple WW active")
+                for ww in enabled_ww:
+                    if ww != matched_ww:
+                        spoken_ww = ww.replace("_", " ")
+                        resp = self.ask_yesno("ask_disable_ww",
+                                              {"ww": spoken_ww})
+                        if resp == "yes":
+                            if self._disable_wake_word(ww, message):
+                                self.speak_dialog("confirm_ww_disabled",
+                                                  {"ww": spoken_ww})
+                            else:
+                                pass
+                                # TODO: Speak error
+
             return
 
         self.speak_dialog("confirm_ww_changing")
-        # This has to reload the recognizer loop, so allow more time to respond
-        resp = self.bus.wait_for_response(message.forward(
-            "neon.enable_wake_word", {"wake_word": matched_ww}), timeout=30)
-        if not resp or resp.data.get('error'):
-            LOG.error(f"Error response resp={resp}")
+        if not self._enable_wake_word(matched_ww, message):
             self.speak_dialog("error_ww_change_failed")
+            # TODO: If this is a timeout, the new WW might be active
             return
 
         new_ww = matched_ww.replace('_', ' ')
@@ -270,10 +282,8 @@ class DeviceControlCenterSkill(NeonSkill):
         if len(enabled_ww) == 1:
             old_ww = enabled_ww[0]
             LOG.debug(f"Disable old WW: {old_ww}")
-            resp = self.bus.wait_for_response(message.forward(
-                "neon.disable_wake_word", {"wake_word": old_ww}), timeout=30)
-            if not resp or resp.data.get("error"):
-                LOG.error(resp)
+            self._disable_wake_word(old_ww, message)
+            # TODO: Something different if this fails
 
             self.speak_dialog("confirm_ww_changed", {"wake_word": new_ww})
         else:
@@ -282,6 +292,39 @@ class DeviceControlCenterSkill(NeonSkill):
 
     def stop(self):
         pass
+
+    def _enable_wake_word(self, ww: str, message: Message) -> bool:
+        """
+        Enable the requested wake word and return True on success
+        :param ww: string wake word to enable
+        :returns: True on success, False on failure
+        """
+        # This has to reload the recognizer loop, so allow more time to respond
+        resp = self.bus.wait_for_response(message.forward(
+            "neon.enable_wake_word", {"wake_word": ww}), timeout=30)
+        if not resp:
+            LOG.error("No response to WW enable request")
+            return False
+        if resp.data.get('error'):
+            LOG.warning(f"WW enable failed with response: {resp.data}")
+            return False
+        return True
+
+    def _disable_wake_word(self, ww: str, message: Message) -> bool:
+        """
+        Disable the requested wake word and return True on success
+        :param ww: string wake word to disable
+        :returns: True on success, False on failure
+        """
+        resp = self.bus.wait_for_response(message.forward(
+            "neon.disable_wake_word", {"wake_word": ww}), timeout=30)
+        if not resp:
+            LOG.error("No response to WW disable request")
+            return False
+        if resp.data.get('error'):
+            LOG.warning(f"WW disable failed with response: {resp.data}")
+            return False
+        return True
 
     def _do_exit_shutdown(self, action: SystemCommand):
         """

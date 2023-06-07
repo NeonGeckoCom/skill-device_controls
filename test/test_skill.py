@@ -621,14 +621,41 @@ class TestSkill(unittest.TestCase):
                                                   "active": False,
                                                   "wake_word": ww}))
 
-        self.skill.bus.once("neon.enable_wake_word", _handle_enable_ww)
-        self.skill.bus.once("neon.disable_wake_word", _handle_disable_ww)
+        self.skill.bus.on("neon.enable_wake_word", _handle_enable_ww)
+        self.skill.bus.on("neon.disable_wake_word", _handle_disable_ww)
 
         self.skill.handle_change_ww(message_change_hey_mycroft)
         self.assertTrue(wake_word_config['hey_mycroft']['active'])
         self.assertFalse(wake_word_config['hey_neon']['active'])
         self.skill.speak_dialog.assert_called_with("confirm_ww_changed",
                                                    {"wake_word": "hey my-croft"})
+
+        # Test already enabled, disable other
+        wake_word_config['hey_neon']['active'] = True
+        self.assertTrue(wake_word_config['hey_mycroft']['active'])
+        self.assertTrue(wake_word_config['hey_neon']['active'])
+
+        real_ask_yesno = self.skill.ask_yesno
+        self.skill.ask_yesno = Mock(return_value="no")
+        self.skill.handle_change_ww(message_change_hey_neon)
+        self.skill.ask_yesno.assert_called_once_with("ask_disable_ww",
+                                                     {"ww": "hey mycroft"})
+        self.assertTrue(wake_word_config['hey_mycroft']['active'])
+        self.assertTrue(wake_word_config['hey_neon']['active'])
+
+        self.skill.ask_yesno.return_value = "yes"
+        self.skill.handle_change_ww(message_change_hey_mycroft)
+        self.skill.ask_yesno.assert_called_with("ask_disable_ww",
+                                                {"ww": "hey neon"})
+        self.skill.speak_dialog.assert_called_with("confirm_ww_disabled",
+                                                   {"ww": "hey neon"})
+        self.assertTrue(wake_word_config['hey_mycroft']['active'])
+        self.assertFalse(wake_word_config['hey_neon']['active'])
+
+        self.skill.ask_yesno = real_ask_yesno
+
+        self.skill.bus.remove("neon.enable_wake_word", _handle_enable_ww)
+        self.skill.bus.remove("neon.disable_wake_word", _handle_disable_ww)
 
         # Test change no response
         self.skill.handle_change_ww(message_change_hey_neon)
@@ -646,6 +673,14 @@ class TestSkill(unittest.TestCase):
         self.skill.handle_change_ww(message_change_hey_neon)
         self.skill.speak_dialog.assert_called_with("error_ww_change_failed")
         disable_ww.assert_not_called()
+
+    def test_enable_ww(self):
+        pass
+        # TODO
+
+    def test_disable_ww(self):
+        pass
+        # TODO
 
 
 if __name__ == '__main__':
