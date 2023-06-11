@@ -197,8 +197,27 @@ class DeviceControlCenterSkill(NeonSkill):
 
     @intent_handler(IntentBuilder("BecomeNeonIntent"))
     def handle_become_neon(self, message):
-        # TODO: Pull default Neon config from repo (see existing code in other services)
-        return
+        """Restore default wake words and voice."""
+        from ovos_config.models import MycroftSystemConfig
+        from neon_core import patch_config
+
+        # Get system configuration
+        system_config = MycroftSystemConfig()
+        # Set default TTS
+        default_tts_config = system_config.get("tts", {})
+        if not default_tts_config:
+            LOG.error("No default TTS config found")
+            return
+        patch_config(default_tts_config)
+        # Set default wake words
+        default_ww_config = system_config.get("hotwords")
+        if not default_ww_config:
+            LOG.error("No default WW config found")
+        patch_config(default_ww_config)
+        # Set default user config
+        self._set_user_neon_tts_settings()
+        # Speak confirmation
+        self.speak_dialog("neon_confirmation")
 
     @intent_handler(IntentBuilder("IronManIntent")
                     .require("i am")
