@@ -26,19 +26,19 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Optional
 from enum import Enum
-from adapt.intent import IntentBuilder
 from random import randint
-from mycroft_bus_client import Message
-from ovos_utils import classproperty
-from ovos_utils.log import LOG
-from ovos_utils.process_utils import RuntimeRequirements
+from typing import Optional
+
+from mycroft.skills import intent_file_handler, intent_handler
 from neon_utils.message_utils import dig_for_message
 from neon_utils.skills.neon_skill import NeonSkill
 from neon_utils.validator_utils import numeric_confirmation_validator
-
-from mycroft.skills import intent_handler, intent_file_handler
+from ovos_bus_client import Message
+from ovos_utils import classproperty
+from ovos_utils.intents import IntentBuilder
+from ovos_utils.log import LOG
+from ovos_utils.process_utils import RuntimeRequirements
 
 
 class SystemCommand(Enum):
@@ -202,6 +202,28 @@ class DeviceControlCenterSkill(NeonSkill):
                                       {"enabled": enabled}))
         # TODO: Handle this event DM
 
+    @intent_handler(IntentBuilder("BecomeNeonIntent"))
+    def handle_become_neon(self, message):
+        # TODO: Pull default Neon config from repo (see existing code in other services)
+        return
+
+    @intent_handler(IntentBuilder("IronManIntent")
+                    .require("i am")
+                    .optionally("iron").optionally("man")
+                    .optionally("ironman"))
+    def handle_ironman_intent(self, message):
+        """
+        Handle a user request to enable IronMan mode.
+        Switches the voice from female to male
+        Uses remote Mimic3 with en_UK/apope_low voice
+        Uses openwakeword "Hey Jarvis" ww
+        """
+        self._disable_all_wake_words(message)
+        self._enable_wake_word("hey_jarvis", message)
+        self._set_jarvis_voice()
+        self._set_user_jarvis_tts_settings()
+        self.speak_dialog("jarvis_confirmation")
+
     @intent_handler(IntentBuilder("ChangeWakeWordIntent")
                     .require("change").require("ww").optionally("rx_wakeword"))
     def handle_change_ww(self, message):
@@ -210,13 +232,10 @@ class DeviceControlCenterSkill(NeonSkill):
         """
         requested_ww = message.data.get("rx_wakeword") or \
             message.data.get("utterance")
-        available_ww = self.wakewords
+        available_ww = self._get_wakewords()
         if not available_ww:
-            LOG.warning(f"Wake Word API Not Available")
-            self.speak_dialog("error_no_ww_api")
             return
-        enabled_ww = [ww for ww in available_ww.keys() if
-                      available_ww[ww].get('active')]
+        enabled_ww = self._get_enabled_wakewords(available_ww)
         matched_ww = None
         for ww in available_ww.keys():
             if ww.lower().replace('_', ' ') in requested_ww.lower():
@@ -253,7 +272,7 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("error_ww_already_enabled",
                               {"requested_ww": matched_ww.replace("_", " ")})
             if len(enabled_ww) > 1:
-                LOG.info(f"Multiple WW active")
+                LOG.info("Multiple WW active")
                 for ww in enabled_ww:
                     if ww != matched_ww:
                         spoken_ww = ww.replace("_", " ")
@@ -264,9 +283,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                 self.speak_dialog("confirm_ww_disabled",
                                                   {"ww": spoken_ww})
                             else:
-                                pass
-                                # TODO: Speak error
-
+                                self._speak_disabled_ww_error(spoken_ww)
             return
 
         self.speak_dialog("confirm_ww_changing")
@@ -340,6 +357,67 @@ class DeviceControlCenterSkill(NeonSkill):
         elif action == SystemCommand.RESTART:
             self.speak_dialog("confirm_restarting", private=True, wait=True)
             self.bus.emit(Message("system.reboot"))
+
+    def _disable_all_wake_words(self, message: Message) -> None:
+        """Disable all wake words and speak confirmation."""
+        available_ww = self._get_wakewords()
+        if available_ww:
+            enabled_ww = self._get_enabled_wakewords(available_ww)
+            if enabled_ww:  # It's possible no WW are enabled
+                for ww in enabled_ww:
+                    if self._disable_wake_word(ww, message):
+                        spoken_ww = ww.replace("_", " ")
+                        self.speak_dialog("confirm_ww_disabled", {"ww": spoken_ww})
+                    else:
+                        self._speak_disabled_ww_error(spoken_ww)
+
+    def _get_wakewords(self) -> Optional[dict]:
+        """Get a dict of available configured wake words."""
+        available_ww = self.wakewords
+        if not available_ww:
+            LOG.warning("Wake Word API Not Available")
+            self.speak_dialog("error_no_ww_api")
+        return available_ww
+
+    def _get_enabled_wakewords(self, available_ww: dict) -> Optional[list]:
+        """Get a list of enabled wake words from the available wake words dict."""
+        return [ww for ww in available_ww.keys() if available_ww[ww].get('active')]
+
+    def _speak_disabled_ww_error(self, spoken_ww: str) -> None:
+        """Speak an error message when a wake word fails to disable."""
+        self.speak_dialog("wakeword_failed_to_disable", {"ww": spoken_ww})
+
+    def _set_jarvis_voice(self) -> None:
+        """Disable current TTS and enable mimic3-server plugin."""
+        from neon_core import patch_config
+
+        # Default config uses the public OVOS mimic3 servers
+        # Since this is meant for non-technical users, the default is best
+        jarvis_config = {
+            "tts": {
+                "module": "ovos-tts-plugin-mimic3-server",
+                "ovos-tts-plugin-mimic3-server": {
+                    "voice": "en_UK/apope_low",
+                }
+                # NOTE: There is no fallback because Neon Mk2 does not ship with Mimic3
+            }
+        }
+        LOG.debug("Patching user config for Jarvis TTS")
+        patch_config(jarvis_config)
+
+    def _set_user_jarvis_tts_settings(self) -> None:
+        """Update user ngi_user_info.yml with male settings and en_UK locale."""
+        from neon_utils.configuration_utils import NGIConfig
+
+        jarvis_config = {
+            "speech": {
+                "tts_language": "en_UK",
+                "tts_gender": "male",
+                "secondary_tts_gender": "male",
+            }
+        }
+        LOG.debug("Patching user ngi config for Jarvis TTS")
+        NGIConfig("ngi_local_config").update_keys(jarvis_config)
 
 
 def create_skill():
