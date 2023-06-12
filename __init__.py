@@ -30,7 +30,7 @@ from typing import Optional
 from enum import Enum
 from adapt.intent import IntentBuilder
 from random import randint
-from mycroft_bus_client import Message
+from ovos_bus_client import Message
 from ovos_utils import classproperty
 from ovos_utils.log import LOG
 from ovos_utils.process_utils import RuntimeRequirements
@@ -171,6 +171,8 @@ class DeviceControlCenterSkill(NeonSkill):
                 self.speak_dialog("not_doing_anything", private=True)
         else:
             self.speak_dialog("already_requiring", private=True)
+
+    # TODO: Factory Reset
 
     @intent_handler(IntentBuilder("ConfirmListeningIntent")
                     .one_of("enable", "disable").require("listening").build())
