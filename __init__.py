@@ -202,7 +202,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                       {"enabled": enabled}))
         # TODO: Handle this event DM
 
-    @intent_handler(IntentBuilder("BecomeNeonIntent"))
+    @intent_handler("become_neon.intent")
     def handle_become_neon(self, message):
         """Restore default wake words and voice."""
         from ovos_config.models import MycroftSystemConfig
@@ -224,12 +224,9 @@ class DeviceControlCenterSkill(NeonSkill):
         # Set default user config
         self._set_user_neon_tts_settings()
         # Speak confirmation
-        self.speak_dialog("neon_confirmation")
+        self.speak_dialog("neon_confirmation", message=message)
 
-    @intent_handler(IntentBuilder("IronManIntent")
-                    .require("i am")
-                    .optionally("iron").optionally("man")
-                    .optionally("ironman"))
+    @intent_handler("ironman.intent")
     def handle_ironman_intent(self, message):
         """
         Handle a user request to enable IronMan mode.
@@ -377,7 +374,7 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("confirm_restarting", private=True, wait=True)
             self.bus.emit(Message("system.reboot"))
 
-    def _disable_all_wake_words(self, message: Message) -> None:
+    def _disable_all_wake_words(self, message: Message) -> bool:
         """Disable all wake words and speak confirmation."""
         available_ww = self._get_wakewords()
         if available_ww:
@@ -387,8 +384,12 @@ class DeviceControlCenterSkill(NeonSkill):
                     if self._disable_wake_word(ww, message):
                         spoken_ww = ww.replace("_", " ")
                         self.speak_dialog("confirm_ww_disabled", {"ww": spoken_ww})
+                        return True
                     else:
                         self._speak_disabled_ww_error(spoken_ww)
+                        return False
+        else:
+            return False
 
     def _get_wakewords(self) -> Optional[dict]:
         """Get a dict of available configured wake words."""

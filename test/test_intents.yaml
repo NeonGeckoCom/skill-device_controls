@@ -20,15 +20,14 @@
 #        - expected_vocab_key: expected_vocab_value
 #        - expected_entity_key: expected_entity_value
 
-
 en-us:
   ExitShutdownIntent:
-  - I want you to exit:
-      - exit
-  - I need you to restart:
-      - restart
-  - Neon shut down please:
-      - shutdown
+    - I want you to exit:
+        - exit
+    - I need you to restart:
+        - restart
+    - Neon shut down please:
+        - shutdown
   SkipWWIntent:
     - start skipping wake words
     - skip wake words
@@ -88,3 +87,9 @@ en-us:
     - power down
     - turn off
     - power off
+  ironman.intent:
+    - i am iron man
+    - i am ironman
+    - i am iron
+  become_neon.intent:
+    - become neon

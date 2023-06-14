@@ -36,7 +36,7 @@ import pytest
 
 from os import mkdir
 from os.path import dirname, join, exists
-from mock import Mock
+from mock import Mock, patch
 from mycroft_bus_client import Message
 from ovos_utils.messagebus import FakeBus
 
@@ -681,6 +681,26 @@ class TestSkill(unittest.TestCase):
     def test_disable_ww(self):
         pass
         # TODO
+
+    @patch("neon_core.patch_config")
+    def test_handle_become_neon(self, mock_patch_config):
+        self.skill.handle_become_neon(Message("test"))
+        mock_patch_config.assert_called()
+
+    @patch("neon_utils.configuration_utils.NGIConfig")
+    def test_set_user_neon_tts_settings(self, MockNGIConfig):
+        self.skill._set_user_neon_tts_settings()
+        MockNGIConfig.update_keys().assert_called()
+
+    @patch("DeviceControlCenterSkill", "wakewords")
+    def test_disable_all_wake_words(self, mock_ww):
+        # No wakewords
+        mock_ww.return_value = []
+        result = self.skill._disable_all_wake_words()
+        self.assertEqual(result, False)
+        # Wakewords, but none enabled
+        # Single enabled wakeword
+        # Three enabled wakewords
 
 
 if __name__ == '__main__':
