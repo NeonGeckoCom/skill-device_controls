@@ -195,7 +195,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                       {"enabled": enabled}))
         # TODO: Handle this event DM
 
-    @intent_handler(IntentBuilder("BecomeNeonIntent"))
+    @intent_handler("become_neon.intent")
     def handle_become_neon(self, message):
         """Restore default wake words and voice."""
         from ovos_config.models import MycroftSystemConfig
@@ -217,12 +217,9 @@ class DeviceControlCenterSkill(NeonSkill):
         # Set default user config
         self._set_user_neon_tts_settings()
         # Speak confirmation
-        self.speak_dialog("neon_confirmation")
+        self.speak_dialog("neon_confirmation", message=message)
 
-    @intent_handler(IntentBuilder("IronManIntent")
-                    .require("i am")
-                    .optionally("iron").optionally("man")
-                    .optionally("ironman"))
+    @intent_handler("ironman.intent")
     def handle_ironman_intent(self, message):
         """
         Handle a user request to enable IronMan mode.
