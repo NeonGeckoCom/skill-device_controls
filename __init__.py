@@ -172,6 +172,8 @@ class DeviceControlCenterSkill(NeonSkill):
         else:
             self.speak_dialog("already_requiring", private=True)
 
+    # TODO: Factory Reset
+
     @intent_handler(IntentBuilder("ConfirmListeningIntent")
                     .one_of("enable", "disable").require("listening").build())
     def handle_confirm_listening(self, message):
