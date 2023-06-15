@@ -48,9 +48,6 @@ class SystemCommand(Enum):
 
 
 class DeviceControlCenterSkill(NeonSkill):
-    def __init__(self):
-        super(DeviceControlCenterSkill, self).__init__(name="DeviceControlCenterSkill")
-
     @classproperty
     def runtime_requirements(self):
         return RuntimeRequirements(network_before_load=False,
@@ -342,7 +339,3 @@ class DeviceControlCenterSkill(NeonSkill):
         elif action == SystemCommand.RESTART:
             self.speak_dialog("confirm_restarting", private=True, wait=True)
             self.bus.emit(Message("system.reboot"))
-
-
-def create_skill():
-    return DeviceControlCenterSkill()
