@@ -1,20 +1,28 @@
 # Changelog
 
-## [0.2.2a2](https://github.com/NeonGeckoCom/skill-device_controls/tree/0.2.2a2) (2023-05-15)
+## [1.0.0](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.0) (2023-06-23)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/0.2.2a1...0.2.2a2)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/0.3.1a2...1.0.0)
+
+**Fixed bugs:**
+
+- \[BUG\] Multiple WW enabled on "change WW intent" [\#67](https://github.com/NeonGeckoCom/skill-device_controls/issues/67)
+
+## [0.3.1a2](https://github.com/NeonGeckoCom/skill-device_controls/tree/0.3.1a2) (2023-06-15)
+
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/0.3.1a1...0.3.1a2)
 
 **Merged pull requests:**
 
-- Prompt to disable other WWs when user requests "changing" to an active one [\#72](https://github.com/NeonGeckoCom/skill-device_controls/pull/72) ([NeonDaniel](https://github.com/NeonDaniel))
+- Deprecate `create_skill` method and update `__init__` for best practices [\#76](https://github.com/NeonGeckoCom/skill-device_controls/pull/76) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [0.2.2a1](https://github.com/NeonGeckoCom/skill-device_controls/tree/0.2.2a1) (2023-05-12)
+## [0.3.1a1](https://github.com/NeonGeckoCom/skill-device_controls/tree/0.3.1a1) (2023-06-12)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/0.2.1...0.2.2a1)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/0.3.0...0.3.1a1)
 
 **Merged pull requests:**
 
-- Handle "wake word" transcribed as "weward" [\#71](https://github.com/NeonGeckoCom/skill-device_controls/pull/71) ([NeonDaniel](https://github.com/NeonDaniel))
+- Refactor mycroft-messagebus-client to ovos-bus-client [\#74](https://github.com/NeonGeckoCom/skill-device_controls/pull/74) ([NeonDaniel](https://github.com/NeonDaniel))
 
 
 
