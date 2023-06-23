@@ -30,7 +30,7 @@ from typing import Optional
 from enum import Enum
 from adapt.intent import IntentBuilder
 from random import randint
-from mycroft_bus_client import Message
+from ovos_bus_client import Message
 from ovos_utils import classproperty
 from ovos_utils.log import LOG
 from ovos_utils.process_utils import RuntimeRequirements
@@ -48,9 +48,6 @@ class SystemCommand(Enum):
 
 
 class DeviceControlCenterSkill(NeonSkill):
-    def __init__(self):
-        super(DeviceControlCenterSkill, self).__init__(name="DeviceControlCenterSkill")
-
     @classproperty
     def runtime_requirements(self):
         return RuntimeRequirements(network_before_load=False,
@@ -171,6 +168,8 @@ class DeviceControlCenterSkill(NeonSkill):
                 self.speak_dialog("not_doing_anything", private=True)
         else:
             self.speak_dialog("already_requiring", private=True)
+
+    # TODO: Factory Reset
 
     @intent_handler(IntentBuilder("ConfirmListeningIntent")
                     .one_of("enable", "disable").require("listening").build())
@@ -340,7 +339,3 @@ class DeviceControlCenterSkill(NeonSkill):
         elif action == SystemCommand.RESTART:
             self.speak_dialog("confirm_restarting", private=True, wait=True)
             self.bus.emit(Message("system.reboot"))
-
-
-def create_skill():
-    return DeviceControlCenterSkill()
