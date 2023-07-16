@@ -35,7 +35,6 @@ import pytest
 from os import mkdir
 from os.path import dirname, join, exists
 from mock import Mock, patch
-from neon_utils.configuration_utils import NGIConfig
 from ovos_bus_client import Message
 from ovos_utils.messagebus import FakeBus
 from ovos_workshop.skill_launcher import SkillLoader
@@ -713,8 +712,33 @@ class TestSkill(unittest.TestCase):
         self.assertEqual(self.skill._disable_wake_word("hey_neon", Message("fake")), True)
 
     def test_disable_all_ww(self):
-        # TODO:
-        return
+        mock_get_ww = self.skill._get_wakewords = Mock()
+        mock_get_enabled_ww = self.skill._get_enabled_wakewords = Mock()
+        mock_disable_ww = self.skill._disable_wake_word = Mock()
+        mock_speak_disabled_ww = self.skill._speak_disabled_ww_error = Mock()
+        # if not available_ww, return False
+        mock_get_ww.return_value = None
+        self.assertFalse(self.skill._disable_all_wake_words(Message("test")))
+        mock_get_ww.assert_called()
+        mock_get_ww.reset_mock()
+        # if available_ww, but none active
+        mock_get_ww.return_value = {"hey_neon": {"active": True}}
+        mock_get_enabled_ww.return_value = []
+        self.assertFalse(self.skill._disable_all_wake_words(Message("test")))
+        mock_get_ww.assert_called()
+        mock_get_enabled_ww.assert_called()
+        mock_get_enabled_ww.reset_mock()
+        # if enabled_ww
+        mock_get_enabled_ww.return_value = ["hey_neon"]
+        # if success:
+        mock_disable_ww.return_value = True
+        self.assertTrue(self.skill._disable_all_wake_words(Message("test")))
+        self.skill.speak_dialog.assert_called_once()
+        # if failure:
+        mock_disable_ww.reset_mock()
+        mock_disable_ww.return_value = False
+        self.assertFalse(self.skill._disable_all_wake_words(Message("test")))
+        mock_speak_disabled_ww.assert_called()
 
     def test_get_wakewords_empty(self):
         def _return_empty_ww_response(message: Message):
@@ -724,31 +748,26 @@ class TestSkill(unittest.TestCase):
         self.assertIsNone(self.skill._get_wakewords())
 
     def test_get_wakewords_basic(self):
-        # TODO: Why is this not returning anything???
         def _return_basic_ww_response(message: Message):
-            self.skill.bus.emit(message.response(self.single_ww))
+            self.skill.bus.emit(message.reply("neon.wake_words", self.single_ww, message.context))
 
-        return
-        # self.skill.bus.once("neon.get_wake_words", _return_basic_ww_response)
-        # self.assertEqual(self.single_ww, self.skill._get_wakewords())
+        # return
+        self.skill.bus.once("neon.get_wake_words", _return_basic_ww_response)
+        self.assertEqual(self.single_ww, self.skill._get_wakewords())
 
     def test_get_wakewords_two_active(self):
-        # TODO: Why is this not returning anything???
         def _return_two_active_ww_response(message: Message):
-            self.skill.bus.emit(message.response(self.two_active_ww))
+            self.skill.bus.emit(message.reply("neon.wake_words", self.two_active_ww, message.context))
 
-        return
-        # self.skill.bus.once("neon.get_wake_words", _return_two_active_ww_response)
-        # self.assertEqual(self.two_active_ww, self.skill._get_wakewords())
+        self.skill.bus.once("neon.get_wake_words", _return_two_active_ww_response)
+        self.assertEqual(self.two_active_ww, self.skill._get_wakewords())
 
     def test_get_wakewords_one_active_two_configured(self):
-        # TODO: Why is this not returning anything???
         def _return_one_active_two_configured_ww_response(message: Message):
-            self.skill.bus.emit(message.response(self.one_in_two_active_ww))
+            self.skill.bus.emit(message.reply("neon.wake_words", self.one_in_two_active_ww, message.context))
 
-        return
-        # self.skill.bus.once("neon.get_wake_words", _return_one_active_two_configured_ww_response)
-        # self.assertEqual(self.one_in_two_active_ww, self.skill._get_wakewords())
+        self.skill.bus.once("neon.get_wake_words", _return_one_active_two_configured_ww_response)
+        self.assertEqual(self.one_in_two_active_ww, self.skill._get_wakewords())
 
     def test_get_enabled_ww(self):
         # Single active wakeword
@@ -761,19 +780,38 @@ class TestSkill(unittest.TestCase):
         self.assertListEqual([], self.skill._get_enabled_wakewords(self.configured_but_not_active_ww))
 
     @patch("ovos_config.models.MycroftSystemConfig")
-    # @patch("neon_core.patch_config")
-    def test_handle_become_neon(self, mock_system_patch_config, mock_patch_config):
-        # TODO: Must have neon_core installed to test this
-        no_tts_config = self.skill.handle_become_neon(Message("test"))
-        return
-        # self.assertEqual(no_tts_config, None)
-        # Assert mock_system_patch_config was called
-        # mock_system_patch_config({"tts": {"foo": {"bar": "baz"}}})
-        # self.skill.handle_become_neon(Message("test"))
+    @patch("neon_core.patch_config")
+    def test_handle_become_neon(self, mock_patch_config, mock_system_patch_config):
+        self._set_user_neon_tts_settings = Mock()
+        fake_message = Message("test")
+        # no TTS config
+        self.assertIsNone(self.skill.handle_become_neon(fake_message))
+        mock_system_patch_config.assert_called()
+        mock_system_patch_config.reset_mock()
+        # TTS config, no default wakewords (invalid setting but we want to test for it)
+        mock_config = {"tts": {"foo": {"bar": "baz"}}}
+        mock_system_patch_config.return_value = mock_config
+        self.assertIsNone(self.skill.handle_become_neon(fake_message))
+        mock_system_patch_config.reset_mock()
+        # TTS config, default wakewords
+        mock_config = {"tts": {"foo": {"bar": "baz"}}, "hotwords": {"hey_neon": {"active": True}}}
+        mock_system_patch_config.return_value = mock_config
+        mock_patch_config.assert_called_with(mock_config)
+        self._set_user_neon_tts_settings.assert_called()
+        self.skill.speak_dialog.assert_called_with(fake_message)
 
-    def test_set_jarvis_voice(self):
-        # TODO: Find a way around needing neon_core, or a way to install it on Mac
-        return
+    @patch("neon_core.patch_config")
+    def test_set_jarvis_voice(self, mock_patch_config):
+        jarvis_config = {
+            "tts": {
+                "module": "ovos-tts-plugin-mimic3-server",
+                "ovos-tts-plugin-mimic3-server": {
+                    "voice": "en_UK/apope_low",
+                }
+                # NOTE: There is no fallback because Neon Mk2 does not ship with Mimic3
+            }
+        }
+        mock_patch_config.assert_called_with(jarvis_config)
 
     @patch("neon_utils.configuration_utils.NGIConfig.update_keys")
     def test_set_user_jarvis_tts_settings(self, mock_update_keys):

@@ -47,7 +47,7 @@ class SystemCommand(Enum):
 
 
 class DeviceControlCenterSkill(NeonSkill):
-    def __init__(self,skill_id="", bus=None, *args, **kwargs):
+    def __init__(self, skill_id="", bus=None, *args, **kwargs):
         super().__init__(bus=bus, skill_id=skill_id, *args, **kwargs)
         
     @classproperty
@@ -220,7 +220,8 @@ class DeviceControlCenterSkill(NeonSkill):
         # Set default wake words
         default_ww_config = system_config.get("hotwords")
         if not default_ww_config:
-            LOG.error("No default WW config found")
+            LOG.warning("No default WW config found")
+            return
         patch_config(default_ww_config)
         # Set default user config
         self._set_user_neon_tts_settings()
