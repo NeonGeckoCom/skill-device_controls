@@ -47,8 +47,8 @@ class SystemCommand(Enum):
 
 
 class DeviceControlCenterSkill(NeonSkill):
-    def __init__(self, skill_id="", bus=None, *args, **kwargs):
-        super().__init__(bus=bus, skill_id=skill_id, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         
     @classproperty
     def runtime_requirements(self):

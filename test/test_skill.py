@@ -1,3 +1,4 @@
+# pylint: disable=protected-access,missing-docstring
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
 # Copyright 2008-2022 Neongecko.com Inc.
@@ -26,15 +27,13 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import tempfile
 import shutil
 import unittest
 from threading import Event
 
 import pytest
-
-from os import mkdir
-from os.path import dirname, join, exists
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 from ovos_bus_client import Message
 from ovos_utils.messagebus import FakeBus
 from ovos_workshop.skill_launcher import SkillLoader
@@ -58,15 +57,6 @@ class TestSkill(unittest.TestCase):
         skill_loader.load()
         cls.skill: DeviceControlCenterSkill = skill_loader.instance
 
-        # Define a directory to use for testing
-        cls.test_fs = join(dirname(__file__), "skill_fs")
-        if not exists(cls.test_fs):
-            mkdir(cls.test_fs)
-
-        # Override the configuration and fs paths to use the test directory
-        cls.skill.settings_write_path = cls.test_fs
-        cls.skill.file_system.path = cls.test_fs
-
         # Override speak and speak_dialog to test passed arguments
         cls.skill.speak = Mock()
         cls.skill.speak_dialog = Mock()
@@ -81,16 +71,26 @@ class TestSkill(unittest.TestCase):
         cls.configured_but_not_active_ww = {"hey_neon": {"active": False}, "hey_mycroft": {"active": False}}
 
     def setUp(self):
+        # For each test, create a unique temporary directory
+        self.temp_dir = tempfile.mkdtemp()
+
+        # Override the configuration and fs paths to use the temp directory
+        self.skill.settings_write_path = self.temp_dir
+        self.skill.file_system.path = self.temp_dir
+
         self.skill.speak.reset_mock()
         self.skill.speak_dialog.reset_mock()
         self.skill._do_exit_shutdown.reset_mock()
 
     def tearDown(self) -> None:
         self.skill.bus.remove_all_listeners("neon.wake_words_state")
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        shutil.rmtree(cls.test_fs)
+        self.skill.bus.remove_all_listeners("neon.confirm_listening")
+        self.skill.bus.remove_all_listeners("neon.show_debug")
+        self.skill.bus.remove_all_listeners("neon.wake_words")
+        self.skill.bus.remove_all_listeners("neon.get_wake_words")
+        self.skill.bus.remove_all_listeners("neon.enable_wake_word")
+        self.skill.bus.remove_all_listeners("neon.disable_wake_word")
+        shutil.rmtree(self.temp_dir)
 
     def test_00_skill_init(self):
         # Test any parameters expected to be set in init or initialize methods
@@ -566,7 +566,7 @@ class TestSkill(unittest.TestCase):
 
         # Test API not available
         self.skill.handle_change_ww(message_change_hey_neon)
-        self.skill.speak_dialog.assert_called_with("error_no_ww_api")
+        self.skill.speak_dialog.assert_called_with("error_no_ww_api", {"requested_ww": "hey neon"})
         self.skill.handle_change_ww(message_change_no_ww)
         self.skill.speak_dialog.assert_called_with("error_no_ww_api")
 
@@ -694,22 +694,24 @@ class TestSkill(unittest.TestCase):
         self.skill.bus.once("neon.enable_wake_word", _return_ww_response)
         self.assertEqual(self.skill._enable_wake_word("hey_neon", Message("fake")), True)
 
-    def test_disable_ww(self):
+    def test_disable_ww_none(self):
         def _return_ww_none(message: Message):
             return None
-
-        def _return_ww_error_response(message: Message):
-            return message.response({"error": "error message"})
-
-        def _return_ww_response(message: Message):
-            self.skill.bus.emit(message.response({"ww": "hey_neon"}))
-
         self.skill.bus.once("neon.disable_wake_word", _return_ww_none)
         self.assertEqual(self.skill._disable_wake_word("hey_neon", Message("neon.disable_wake_word")), False)
+
+    def test_disable_ww_error(self):
+        def _return_ww_error_response(message: Message):
+            return message.response({"error": "error message"})
         self.skill.bus.once("neon.disable_wake_word", _return_ww_error_response)
         self.assertEqual(self.skill._disable_wake_word("hey_neon", Message("neon.disable_wake_word")), False)
+
+    def test_disable_ww_success(self):
+        def _return_ww_response(message: Message):
+            self.skill.bus.emit(message.response({"ww": "hey_neon"}))
         self.skill.bus.once("neon.disable_wake_word", _return_ww_response)
         self.assertEqual(self.skill._disable_wake_word("hey_neon", Message("fake")), True)
+
 
     def test_disable_all_ww(self):
         mock_get_ww = self.skill._get_wakewords = Mock()
@@ -780,7 +782,7 @@ class TestSkill(unittest.TestCase):
         self.assertListEqual([], self.skill._get_enabled_wakewords(self.configured_but_not_active_ww))
 
     @patch("ovos_config.models.MycroftSystemConfig")
-    @patch("neon_core.patch_config")
+    @patch("neon_core.patch_config")  # NOTE: Will not pass locally without Neon Core installed
     def test_handle_become_neon(self, mock_patch_config, mock_system_patch_config):
         self._set_user_neon_tts_settings = Mock()
         fake_message = Message("test")
@@ -800,7 +802,7 @@ class TestSkill(unittest.TestCase):
         self._set_user_neon_tts_settings.assert_called()
         self.skill.speak_dialog.assert_called_with(fake_message)
 
-    @patch("neon_core.patch_config")
+    @patch("neon_core.patch_config")  # NOTE: Will not pass locally without Neon Core installed
     def test_set_jarvis_voice(self, mock_patch_config):
         jarvis_config = {
             "tts": {
