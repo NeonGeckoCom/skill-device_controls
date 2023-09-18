@@ -20,6 +20,10 @@
 #        - expected_vocab_key: expected_vocab_value
 #        - expected_entity_key: expected_entity_value
 
+en-us:
+  ExitShutdownIntent:
+  - I want you to exit:
+      - exit
 uk-ua:
   ExitShutdownIntent:
   - Я бажаю щоб ви вихід:
