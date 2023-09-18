@@ -88,9 +88,9 @@ en-us:
     - power down
     - turn off
     - power off
-uk-ua:
+uk-uk:
   ExitShutdownIntent:
-  - I want you to exit:
+  - Я хочу ти закінчити:
       - вихід
   - Я хочу тебе перезавантажити:
       - Перезавантажити
