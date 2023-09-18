@@ -90,8 +90,8 @@ en-us:
     - power off
 uk-ua:
   ExitShutdownIntent:
-  - Я хочу вийти:
-      - exit
+  - I want you to exit:
+      - вихід
   - Я хочу тебе перезавантажити:
       - Перезавантажити
   - Зупинити неон будь ласка:
