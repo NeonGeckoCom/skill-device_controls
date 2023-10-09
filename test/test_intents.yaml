@@ -24,33 +24,96 @@ en-us:
   ExitShutdownIntent:
   - I want you to exit:
       - exit
+  - I need you to restart:
+      - restart
+  - Neon shut down please:
+      - shutdown
+  SkipWWIntent:
+    - start skipping wake words
+    - skip wake words
+    - begin skipping wake words
+  SoloModeIntent:
+    - start solo mode
+    - enter solo mode
+    - enable solo mode
+    - begin solo mode
+    - allow solo mode
+  UseWWIntent:
+    - use wake words
+    - require wake words
+    - start using wake words
+    - quit skipping wake words
+  StopSoloModeIntent:
+    - exit solo mode
+    - end solo mode
+    - disable solo mode
+    - stop solo mode
+    - turn off solo mode
+  ConfirmListeningIntent:
+    - enable listening confirmation:
+        - enable
+    - disable listening confirmations:
+        - disable
+    - turn on recording confirmations:
+        - enable
+    - turn off recording sounds:
+        - disable
+    - enable confirmation sounds:
+        - enable
+    - disable confirmation sound:
+        - disable
+  ShowDebugIntent:
+    - enable debugging view
+    - disable debug display
+    - turn on neon brain
+    - turn off debug window
+  ChangeWakeWordIntent:
+    - change my wake word to hey mycroft:
+        rx_wakeword: hey mycroft
+    - set my wake word as hey neon:
+        rx_wakeword: hey neon
+    - update my wakeword to hello:
+        rx_wakeword: hello
+    - change my wake word okay
+    - make my wake word something
+  exit.intent:
+    - exit
+  restart.intent:
+    - restart
+    - reboot
+  shutdown.intent:
+    - shutdown
+    - shut down
+    - power down
+    - turn off
+    - power off
+
 uk-ua:
   ExitShutdownIntent:
   - Я бажаю щоб ви вихід:
       - exit: вихід
   - Я хочу тебе перезавантажити:
-      - Перезавантажити
+      - restart: Перезавантажити
   - Зупинити неон будь ласка:
-      - Зупинити
+      - shutdown: Зупинити
   SkipWWIntent:
-    - Почати пропускати
-    - Дозволити пропуск
-    - Розпочати пропуск
+    - start skipping wake words: Почати пропускати
+    - skip wake words: Дозволити пропуск
+    - begin skipping wake words: Розпочати пропуск
   SoloModeIntent:
-    - Режим соло
-    - Почати режим соло
-    - Дозволити режим соло
-    - Розпочати режим соло
+    - start solo mode: Режим соло
+    - enter solo mode: Почати режим соло
+    - enable solo mode: Дозволити режим соло
+    - begin solo mode: Розпочати режим соло
   UseWWIntent:
-    - Ключові слова для активації
-    - Слова для пробудження
-    - Слова активації
-    - Активуючі слова
+    - use wake words: Ключові слова для активації
+    - require wake words: Слова для пробудження
+    - start using wake words: Слова активації
   StopSoloModeIntent:
-    - Зупинити режим соло
-    - Закінчити режим соло
-    - Відхилити режим соло
-    - Вийти режим соло
+    - exit solo mode: Зупинити режим соло
+    - end solo mode: Закінчити режим соло
+    - disable solo mode: Відхилити режим соло
+    - stop solo mode: Вийти режим соло
   ConfirmListeningIntent:
     - увімкнути Підтвердження прослуховування:
         - увімкнути
