@@ -93,9 +93,9 @@ uk-ua:
   - Я бажаю щоб ви вихід:
       - exit: вихід
   - Я бажаю щоб ви  перезавантажити:
-      - restart: Перезавантажити
+      - restart: перезавантажити
   - Мені потрібно щоб ви зупинили:
-      - shutdown: Зупинити
+      - shutdown: зупинити
   SkipWWIntent:
     - start skipping wake words: Почати пропускати
     - skip wake words: Дозволити пропуск
