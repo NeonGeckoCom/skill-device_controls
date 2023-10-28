@@ -40,6 +40,7 @@ from ovos_utils.log import LOG
 from ovos_utils.process_utils import RuntimeRequirements
 from ovos_workshop.decorators import intent_file_handler, intent_handler
 
+
 class SystemCommand(Enum):
     SHUTDOWN = "shut down this device"
     RESTART = "restart Neon"
@@ -206,8 +207,8 @@ class DeviceControlCenterSkill(NeonSkill):
     @intent_handler("become_neon.intent")
     def handle_become_neon(self, message):
         """Restore default wake words and voice."""
-        from ovos_config.models import MycroftSystemConfig
         from neon_core import patch_config
+        from ovos_config.models import MycroftSystemConfig
 
         # Get system configuration
         system_config = MycroftSystemConfig()
@@ -458,3 +459,15 @@ class DeviceControlCenterSkill(NeonSkill):
         }
         LOG.debug("Patching user ngi config for Neon TTS")
         NGIConfig("ngi_local_config").update_keys(neon_config)
+
+
+if __name__ == "__main__":
+    from ovos_workshop.skill_launcher import SkillLoader
+    from ovos_utils.messagebus import get_mycroft_bus
+    from ovos_bus_client.client import MessageBusClient
+
+    bus = get_mycroft_bus() or MessageBusClient("localhost")
+    skill_loader = SkillLoader(bus, ".")
+    skill_loader.load()
+    skill = skill_loader.instance
+    print("break")

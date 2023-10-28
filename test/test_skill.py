@@ -27,13 +27,14 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import tempfile
 import shutil
+import tempfile
 import unittest
+from os.path import dirname
 from threading import Event
+from unittest.mock import Mock, patch
 
 import pytest
-from unittest.mock import Mock, patch
 from ovos_bus_client import Message
 from ovos_utils.messagebus import FakeBus
 from ovos_workshop.skill_launcher import SkillLoader
