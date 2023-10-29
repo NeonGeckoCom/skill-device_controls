@@ -463,11 +463,11 @@ class DeviceControlCenterSkill(NeonSkill):
 
 if __name__ == "__main__":
     from ovos_workshop.skill_launcher import SkillLoader
-    from ovos_utils.messagebus import get_mycroft_bus
     from ovos_bus_client.client import MessageBusClient
 
-    bus = get_mycroft_bus() or MessageBusClient("localhost")
-    skill_loader = SkillLoader(bus, ".")
+    bus = MessageBusClient("localhost")
+    bus.run_forever_in_thread()
+    skill_loader = SkillLoader(bus, "skill-device_controls.neongeckocom")
     skill_loader.load()
     skill = skill_loader.instance
     print("break")
