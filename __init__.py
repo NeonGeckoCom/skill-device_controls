@@ -344,6 +344,7 @@ class DeviceControlCenterSkill(NeonSkill):
             return False
         if resp.data.get('error'):
             LOG.warning(f"WW enable failed with response: {resp.data}")
+            # TODO: Make sure the config exists to be enabled, or find a way to add it
             return False
         return True
 
@@ -422,7 +423,7 @@ class DeviceControlCenterSkill(NeonSkill):
 
     def _set_jarvis_voice(self) -> None:
         """Disable current TTS and enable mimic3-server plugin."""
-        from neon_core import patch_config
+        from neon_core.configuration import patch_config
 
         # Default config for ovos-tts-server-plugin uses the public OVOS Piper servers
         # Since this is meant for non-technical users, the default is best
