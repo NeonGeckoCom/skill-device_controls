@@ -348,7 +348,7 @@ class DeviceControlCenterSkill(NeonSkill):
         resp = self._emit_ww_enable_message(ww, message)
         if resp.data.get('error') == "ww not configured":
             LOG.warning(f"WW not configured at the system level, patching: {ww}")
-            patch_config({"hotwords": {"hey_jarvis": {"active": True}}})
+            patch_config({"hotwords": {"hey_jarvis": {"active": True, "listen": True}}})
             resp = self._emit_ww_enable_message(ww, message)
             if resp and resp.data.get("error"):
                 self.log.error(f"WW enable failed with response: {resp.data}")
@@ -446,10 +446,10 @@ class DeviceControlCenterSkill(NeonSkill):
         patch_config(jarvis_config)
 
     def _set_user_jarvis_tts_settings(self) -> None:
-        """Update user ngi_user_info.yml with male settings and en_UK locale."""
+        """Update user ngi_user_info.yml with male settings and en-uk locale."""
         jarvis_config = {
             "speech": {
-                "tts_language": "en_UK",
+                "tts_language": "en-uk",
                 "tts_gender": "male",
                 "secondary_tts_gender": "male",
             }
@@ -458,10 +458,10 @@ class DeviceControlCenterSkill(NeonSkill):
         NGIConfig("ngi_user_info", force_reload=True).update_keys(jarvis_config)
 
     def _set_user_neon_tts_settings(self) -> None:
-        """Update user ngi_user_info.yml with female settings and en_US locale."""
+        """Update user ngi_user_info.yml with female settings and en-us locale."""
         neon_config = {
             "speech": {
-                "tts_language": "en_US",
+                "tts_language": "en-us",
                 "tts_gender": "female",
                 "secondary_tts_gender": "female",
             }
