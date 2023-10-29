@@ -387,6 +387,7 @@ class DeviceControlCenterSkill(NeonSkill):
         available_ww = self._get_wakewords()
         if available_ww:
             self.log.debug(f"Found available WW: {available_ww}")
+            # TODO: Identify why this doesn't grab user config
             enabled_ww = self._get_enabled_wakewords(available_ww)
             if enabled_ww:  # It's possible no WW are enabled
                 self.log.debug(f"Found enabled WWs: {enabled_ww}")
@@ -430,7 +431,8 @@ class DeviceControlCenterSkill(NeonSkill):
         # NOTE: There is no fallback because Neon Mk2 does not ship with Piper
         jarvis_config = {
             "tts": {
-                "module": "ovos-tts-server-plugin"
+                "module": "ovos-tts-plugin-server",
+                "ovos-tts-plugin-server": {"url": "https://tts.smartgic.io/piper"}
             }
         }
         LOG.debug("Patching user config for Jarvis TTS")
@@ -448,7 +450,7 @@ class DeviceControlCenterSkill(NeonSkill):
             }
         }
         LOG.debug("Patching user ngi config for Jarvis TTS")
-        NGIConfig("ngi_local_config", force_reload=True).update_keys(jarvis_config)
+        NGIConfig("ngi_user_info", force_reload=True).update_keys(jarvis_config)
 
     def _set_user_neon_tts_settings(self) -> None:
         """Update user ngi_user_info.yml with female settings and en_US locale."""
