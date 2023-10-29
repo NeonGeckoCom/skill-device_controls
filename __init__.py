@@ -336,6 +336,7 @@ class DeviceControlCenterSkill(NeonSkill):
         :returns: True on success, False on failure
         """
         # This has to reload the recognizer loop, so allow more time to respond
+        self.log.debug(f"Attempting to enable WW: {ww}")
         resp = self.bus.wait_for_response(message.forward(
             "neon.enable_wake_word", {"wake_word": ww}), timeout=30)
         if not resp:
@@ -357,9 +358,10 @@ class DeviceControlCenterSkill(NeonSkill):
         if not resp:
             LOG.error("No response to WW disable request")
             return False
-        if resp.data.get('error'):
+        if resp.data.get("error"):
             LOG.warning(f"WW disable failed with response: {resp.data}")
             return False
+        self.log.debug(f"Disabled WW: {ww}")
         return True
 
     def _do_exit_shutdown(self, action: SystemCommand):
@@ -383,10 +385,13 @@ class DeviceControlCenterSkill(NeonSkill):
         """
         available_ww = self._get_wakewords()
         if available_ww:
+            self.log.debug(f"Found available WW: {available_ww}")
             enabled_ww = self._get_enabled_wakewords(available_ww)
             if enabled_ww:  # It's possible no WW are enabled
+                self.log.debug(f"Found enabled WWs: {enabled_ww}")
                 for ww in enabled_ww:
                     spoken_ww = ww.replace("_", " ")
+                    self.log.debug(f"Disabling WW: {ww}")
                     if self._disable_wake_word(ww, message):
                         self.speak_dialog("confirm_ww_disabled", {"ww": spoken_ww})
                         return True
@@ -394,6 +399,7 @@ class DeviceControlCenterSkill(NeonSkill):
                         self._speak_disabled_ww_error(spoken_ww)
                         return False
         else:
+            self.log.debug("No available WW found")
             return False
 
     def _get_wakewords(self) -> Optional[dict]:
@@ -418,15 +424,12 @@ class DeviceControlCenterSkill(NeonSkill):
         """Disable current TTS and enable mimic3-server plugin."""
         from neon_core import patch_config
 
-        # Default config uses the public OVOS mimic3 servers
+        # Default config for ovos-tts-server-plugin uses the public OVOS Piper servers
         # Since this is meant for non-technical users, the default is best
+        # NOTE: There is no fallback because Neon Mk2 does not ship with Piper
         jarvis_config = {
             "tts": {
-                "module": "ovos-tts-plugin-mimic3-server",
-                "ovos-tts-plugin-mimic3-server": {
-                    "voice": "en_UK/apope_low",
-                }
-                # NOTE: There is no fallback because Neon Mk2 does not ship with Mimic3
+                "module": "ovos-tts-server-plugin"
             }
         }
         LOG.debug("Patching user config for Jarvis TTS")
@@ -444,7 +447,7 @@ class DeviceControlCenterSkill(NeonSkill):
             }
         }
         LOG.debug("Patching user ngi config for Jarvis TTS")
-        NGIConfig("ngi_local_config").update_keys(jarvis_config)
+        NGIConfig("ngi_local_config", force_reload=True).update_keys(jarvis_config)
 
     def _set_user_neon_tts_settings(self) -> None:
         """Update user ngi_user_info.yml with female settings and en_US locale."""
