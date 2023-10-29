@@ -30,10 +30,13 @@ from enum import Enum
 from random import randint
 from typing import List, Optional
 
+from neon_core.configuration import patch_config
+from neon_utils.configuration_utils import NGIConfig
 from neon_utils.message_utils import dig_for_message
 from neon_utils.skills.neon_skill import NeonSkill
 from neon_utils.validator_utils import numeric_confirmation_validator
 from ovos_bus_client import Message
+from ovos_config.models import MycroftSystemConfig
 from ovos_utils import classproperty
 from ovos_utils.intents import IntentBuilder
 from ovos_utils.log import LOG
@@ -207,9 +210,6 @@ class DeviceControlCenterSkill(NeonSkill):
     @intent_handler("become_neon.intent")
     def handle_become_neon(self, message):
         """Restore default wake words and voice."""
-        from neon_core import patch_config
-        from ovos_config.models import MycroftSystemConfig
-
         # Get system configuration
         system_config = MycroftSystemConfig()
         # Set default TTS
@@ -329,23 +329,32 @@ class DeviceControlCenterSkill(NeonSkill):
     def stop(self):
         pass
 
+    def _emit_enable_ww_message(self, ww: str, message: Message) -> Optional[Message]:
+        # This has to reload the recognizer loop, so allow more time to respond
+        resp = self.bus.wait_for_response(message.forward(
+            "neon.enable_wake_word", {"wake_word": ww}), timeout=30)
+        if not resp:
+            LOG.error(f"No response to WW enable request for {ww}!")
+            return None
+        return resp
+
     def _enable_wake_word(self, ww: str, message: Message) -> bool:
         """
         Enable the requested wake word and return True on success
         :param ww: string wake word to enable
         :returns: True on success, False on failure
         """
-        # This has to reload the recognizer loop, so allow more time to respond
         self.log.debug(f"Attempting to enable WW: {ww}")
-        resp = self.bus.wait_for_response(message.forward(
-            "neon.enable_wake_word", {"wake_word": ww}), timeout=30)
-        if not resp:
-            LOG.error("No response to WW enable request")
-            return False
-        if resp.data.get('error'):
-            LOG.warning(f"WW enable failed with response: {resp.data}")
-            # TODO: Make sure the config exists to be enabled, or find a way to add it
-            return False
+        resp = self._emit_ww_enable_message(ww, message)
+        if resp.data.get('error') == "ww not configured":
+            LOG.warning(f"WW not configured at the system level, patching: {ww}")
+            patch_config({"hotwords": {"hey_jarvis": {"active": True}}})
+            resp = self._emit_ww_enable_message(ww, message)
+            if resp and resp.data.get("error"):
+                self.log.error(f"WW enable failed with response: {resp.data}")
+                return False
+            else:
+                return True
         return True
 
     def _disable_wake_word(self, ww: str, message: Message) -> bool:
@@ -424,8 +433,6 @@ class DeviceControlCenterSkill(NeonSkill):
 
     def _set_jarvis_voice(self) -> None:
         """Disable current TTS and enable mimic3-server plugin."""
-        from neon_core.configuration import patch_config
-
         # Default config for ovos-tts-server-plugin uses the public OVOS Piper servers
         # Since this is meant for non-technical users, the default is best
         # NOTE: There is no fallback because Neon Mk2 does not ship with Piper
@@ -440,8 +447,6 @@ class DeviceControlCenterSkill(NeonSkill):
 
     def _set_user_jarvis_tts_settings(self) -> None:
         """Update user ngi_user_info.yml with male settings and en_UK locale."""
-        from neon_utils.configuration_utils import NGIConfig
-
         jarvis_config = {
             "speech": {
                 "tts_language": "en_UK",
@@ -454,8 +459,6 @@ class DeviceControlCenterSkill(NeonSkill):
 
     def _set_user_neon_tts_settings(self) -> None:
         """Update user ngi_user_info.yml with female settings and en_US locale."""
-        from neon_utils.configuration_utils import NGIConfig
-
         neon_config = {
             "speech": {
                 "tts_language": "en_US",
