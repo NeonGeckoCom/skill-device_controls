@@ -354,6 +354,7 @@ class DeviceControlCenterSkill(NeonSkill):
                 self.log.error(f"WW enable failed with response: {resp.data}")
                 return False
             else:
+                self.log.debug(f"Enabled WW with response: {resp.data}")
                 return True
         return True
 
@@ -448,14 +449,14 @@ class DeviceControlCenterSkill(NeonSkill):
     def _set_user_jarvis_tts_settings(self) -> None:
         """Update user ngi_user_info.yml with male settings and en-uk locale."""
         jarvis_config = {
-            "speech": {
                 "tts_language": "en-uk",
                 "tts_gender": "male",
                 "secondary_tts_gender": "male",
-            }
         }
         LOG.debug("Patching user ngi config for Jarvis TTS")
-        NGIConfig("ngi_user_info", force_reload=True).update_keys(jarvis_config)
+        user_config = NGIConfig("ngi_user_info", force_reload=True)
+        for k, v in jarvis_config.items():
+            user_config["speech"][k] = v
 
     def _set_user_neon_tts_settings(self) -> None:
         """Update user ngi_user_info.yml with female settings and en-us locale."""
