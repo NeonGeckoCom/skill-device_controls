@@ -133,7 +133,3 @@ uk-ua:
   shutdown.intent:
     - закрити
     - вимкнути
-    - shut down
-    - power down
-    - turn off
-    - power off
