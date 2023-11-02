@@ -1,6 +1,6 @@
 {
     "title": "Device Control Center",
-    "url": "https://github.com/NeonGeckoCom/skill-device_controls_intent_test",
+    "url": "https://github.com/NeonGeckoCom/skill-device_controls",
     "summary": "Handles system-wide settings and controls.",
     "short_description": "Handles system-wide settings and controls.",
     "description": "Device Control skill handles global core configuration and OS interactions (via messagebus/PHAL service).",
@@ -53,7 +53,7 @@
         "NeonDaniel",
         "reginaneon"
     ],
-    "skillname": "skill-device_controls_intent_test",
+    "skillname": "skill-device_controls",
     "authorname": "NeonGeckoCom",
     "foldername": null
 }
