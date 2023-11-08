@@ -50,7 +50,7 @@ class TestSkillMethods(SkillTestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        SkillTestCase.setUpClass(cls)
+        SkillTestCase.setUpClass()
         cls.bus.on('neon.query_wake_words_state', _ww_enabled)
 
         # Mock exit/shutdown method to prevent interactions with test runner
