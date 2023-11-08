@@ -16,7 +16,6 @@
     "systemDeps": false,
     "requirements": {
         "python": [
-            "neon-minerva @ git+https://github.com/neongeckocom/neon-minerva@FEAT_SkillTestBaseClass",
             "neon-utils~=1.0",
             "ovos-bus-client~=0.0.3",
             "ovos-utils~=0.0.28"
