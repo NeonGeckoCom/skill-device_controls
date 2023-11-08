@@ -26,21 +26,16 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
-import json
 import shutil
-import unittest
-from threading import Event
-
 import pytest
 
-from os import mkdir
-from os.path import dirname, join, exists
+from neon_minerva.tests.skill_unit_test_base import SkillTestCase
+
+from threading import Event
 from mock import Mock
 from mycroft_bus_client import Message
 from ovos_utils.messagebus import FakeBus
 
-from mycroft.skills.skill_loader import SkillLoader
 
 
 WW_STATE = True
@@ -51,35 +46,18 @@ def _ww_enabled(message):
     bus.emit(message.response({'enabled': WW_STATE}))
 
 
-class TestSkill(unittest.TestCase):
+class TestSkillMethods(SkillTestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        bus.run_in_thread()
-        bus.on('neon.query_wake_words_state', _ww_enabled)
-        skill_loader = SkillLoader(bus, dirname(dirname(__file__)))
-        skill_loader.load()
-        cls.skill = skill_loader.instance
-
-        # Define a directory to use for testing
-        cls.test_fs = join(dirname(__file__), "skill_fs")
-        if not exists(cls.test_fs):
-            mkdir(cls.test_fs)
-
-        # Override the configuration and fs paths to use the test directory
-        cls.skill.settings_write_path = cls.test_fs
-        cls.skill.file_system.path = cls.test_fs
-
-        # Override speak and speak_dialog to test passed arguments
-        cls.skill.speak = Mock()
-        cls.skill.speak_dialog = Mock()
+        SkillTestCase.setUpClass(cls)
+        cls.bus.on('neon.query_wake_words_state', _ww_enabled)
 
         # Mock exit/shutdown method to prevent interactions with test runner
         cls.skill._do_exit_shutdown = Mock()
 
     def setUp(self):
-        self.skill.speak.reset_mock()
-        self.skill.speak_dialog.reset_mock()
+        SkillTestCase.setUp(self)
         self.skill._do_exit_shutdown.reset_mock()
 
     def tearDown(self) -> None:
