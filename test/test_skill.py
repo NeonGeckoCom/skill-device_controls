@@ -32,7 +32,7 @@ import pytest
 from neon_minerva.tests.skill_unit_test_base import SkillTestCase
 
 from threading import Event
-from mock import Mock
+from unittest.mock import Mock
 from ovos_bus_client.message import Message
 
 

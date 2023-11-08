@@ -1,2 +1,1 @@
-mock~=4.0
 neon-minerva @ git+https://github.com/neongeckocom/neon-minerva@FEAT_SkillTestBaseClass
