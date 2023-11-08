@@ -37,13 +37,11 @@ from mycroft_bus_client import Message
 from ovos_utils.messagebus import FakeBus
 
 
-
 WW_STATE = True
-bus = FakeBus()
 
 
 def _ww_enabled(message):
-    bus.emit(message.response({'enabled': WW_STATE}))
+    TestSkillMethods.bus.emit(message.response({'enabled': WW_STATE}))
 
 
 class TestSkillMethods(SkillTestCase):
