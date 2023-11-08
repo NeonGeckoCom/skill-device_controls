@@ -33,8 +33,7 @@ from neon_minerva.tests.skill_unit_test_base import SkillTestCase
 
 from threading import Event
 from mock import Mock
-from mycroft_bus_client import Message
-from ovos_utils.messagebus import FakeBus
+from ovos_bus_client.message import Message
 
 
 WW_STATE = True
