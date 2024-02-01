@@ -44,7 +44,6 @@ def _ww_enabled(message):
 
 
 class TestSkillMethods(SkillTestCase):
-
     @classmethod
     def setUpClass(cls) -> None:
         SkillTestCase.setUpClass()
