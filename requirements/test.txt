@@ -1,1 +1,1 @@
-neon-minerva~=0.1,>=0.1.1a5
+neon-minerva~=0.2
