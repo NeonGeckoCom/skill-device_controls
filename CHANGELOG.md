@@ -1,28 +1,52 @@
 # Changelog
 
-## [1.0.0](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.0) (2023-06-23)
+## [1.0.1a6](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a6) (2024-04-01)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/0.3.1a2...1.0.0)
-
-**Fixed bugs:**
-
-- \[BUG\] Multiple WW enabled on "change WW intent" [\#67](https://github.com/NeonGeckoCom/skill-device_controls/issues/67)
-
-## [0.3.1a2](https://github.com/NeonGeckoCom/skill-device_controls/tree/0.3.1a2) (2023-06-15)
-
-[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/0.3.1a1...0.3.1a2)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.1a5...1.0.1a6)
 
 **Merged pull requests:**
 
-- Deprecate `create_skill` method and update `__init__` for best practices [\#76](https://github.com/NeonGeckoCom/skill-device_controls/pull/76) ([NeonDaniel](https://github.com/NeonDaniel))
+- Update test dependency to stable spec [\#84](https://github.com/NeonGeckoCom/skill-device_controls/pull/84) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [0.3.1a1](https://github.com/NeonGeckoCom/skill-device_controls/tree/0.3.1a1) (2023-06-12)
+## [1.0.1a5](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a5) (2024-02-01)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/0.3.0...0.3.1a1)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.1a4...1.0.1a5)
 
 **Merged pull requests:**
 
-- Refactor mycroft-messagebus-client to ovos-bus-client [\#74](https://github.com/NeonGeckoCom/skill-device_controls/pull/74) ([NeonDaniel](https://github.com/NeonDaniel))
+- Support ovos-utils 0.1 [\#83](https://github.com/NeonGeckoCom/skill-device_controls/pull/83) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [1.0.1a4](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a4) (2023-12-19)
+
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.1a3...1.0.1a4)
+
+**Merged pull requests:**
+
+- Update dependencies to stable versions [\#81](https://github.com/NeonGeckoCom/skill-device_controls/pull/81) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [1.0.1a3](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a3) (2023-12-19)
+
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.1a2...1.0.1a3)
+
+**Merged pull requests:**
+
+- Add missing uk-ua dialog files [\#82](https://github.com/NeonGeckoCom/skill-device_controls/pull/82) ([NeonDmitry](https://github.com/NeonDmitry))
+
+## [1.0.1a2](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a2) (2023-11-08)
+
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.1a1...1.0.1a2)
+
+**Merged pull requests:**
+
+- Ukrainian translation [\#43](https://github.com/NeonGeckoCom/skill-device_controls/pull/43) ([NeonMariia](https://github.com/NeonMariia))
+
+## [1.0.1a1](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a1) (2023-11-08)
+
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.0...1.0.1a1)
+
+**Merged pull requests:**
+
+- Update unit tests [\#80](https://github.com/NeonGeckoCom/skill-device_controls/pull/80) ([NeonDaniel](https://github.com/NeonDaniel))
 
 
 
