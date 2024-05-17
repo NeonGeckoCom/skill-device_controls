@@ -25,18 +25,22 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-from typing import Optional
+from typing import List
 from enum import Enum
-from adapt.intent import IntentBuilder
+from posixpath import expanduser
 from random import randint
-from ovos_bus_client import Message
-from ovos_utils import classproperty
-from ovos_utils.log import LOG
-from ovos_utils.process_utils import RuntimeRequirements
+from typing import Optional
+
+from adapt.intent import IntentBuilder
+from neon_utils.configuration_utils import NGIConfig
 from neon_utils.message_utils import dig_for_message
 from neon_utils.skills.neon_skill import NeonSkill
 from neon_utils.validator_utils import numeric_confirmation_validator
+from ovos_bus_client import Message
+from ovos_config.config import update_mycroft_config
+from ovos_utils import classproperty
+from ovos_utils.log import LOG
+from ovos_utils.process_utils import RuntimeRequirements
 from ovos_workshop.decorators import intent_handler
 
 
@@ -47,6 +51,10 @@ class SystemCommand(Enum):
 
 
 class DeviceControlCenterSkill(NeonSkill):
+    _pending_audio_restart = False
+    _dialog_to_speak = ""
+    user_config_path = expanduser("~/.config/neon/neon.yaml")
+
     @classproperty
     def runtime_requirements(self):
         return RuntimeRequirements(network_before_load=False,
@@ -200,6 +208,48 @@ class DeviceControlCenterSkill(NeonSkill):
                                       {"enabled": enabled}))
         # TODO: Handle this event DM
 
+    def handle_classic_mycroft_intent(self, message):
+        """
+        Give the user a classic Mycroft experience.
+        Switches the voice to male
+        Uses local Mimic with the classic apope voice
+        Uses precise-lite "Hey Mycroft" ww
+        """
+        self._set_user_tts_settings("mycroft")
+        self._enable_wake_word("hey_mycroft", message)
+        self._disable_all_other_wake_words(message, "hey_mycroft")
+        self._set_mycroft_voice()
+        self.bus.emit(Message(msg_type="system.mycroft.service.restart", data={"display": True}))
+        self._pending_audio_restart = True
+        self._dialog_to_speak = "mycroft_confirmation"
+
+    @intent_handler("become_neon.intent")
+    def handle_become_neon(self, message):
+        """Restore default wake words and voice."""
+        self._set_user_tts_settings("neon")
+        self._enable_wake_word("hey_neon", message)
+        self._disable_all_other_wake_words(message, "hey_neon")
+        self._set_neon_voice()
+        self.bus.emit(Message("system.mycroft.service.restart", data={"display": True}))
+        self._pending_audio_restart = True
+        self._dialog_to_speak = "neon_confirmation"
+
+    @intent_handler("ironman.intent")
+    def handle_ironman_intent(self, message):
+        """
+        Handle a user request to enable IronMan mode.
+        Switches the voice from female to male
+        Uses local Piper with en-us/alan-low voice
+        Uses openwakeword "Hey Jarvis" ww
+        """
+        self._set_user_tts_settings("jarvis")
+        self._enable_wake_word("hey_jarvis", message)
+        self._disable_all_other_wake_words(message, "hey_jarvis")
+        self._set_jarvis_voice()
+        self.bus.emit(Message("system.mycroft.service.restart", data={"display": True}))
+        self._pending_audio_restart = True
+        self._dialog_to_speak = "jarvis_confirmation"
+
     @intent_handler(IntentBuilder("ChangeWakeWordIntent")
                     .require("change").require("ww").optionally("rx_wakeword"))
     def handle_change_ww(self, message):
@@ -210,7 +260,7 @@ class DeviceControlCenterSkill(NeonSkill):
             message.data.get("utterance")
         available_ww = self.wakewords
         if not available_ww:
-            LOG.warning(f"Wake Word API Not Available")
+            LOG.warning("Wake Word API Not Available")
             self.speak_dialog("error_no_ww_api")
             return
         enabled_ww = [ww for ww in available_ww.keys() if
@@ -251,7 +301,7 @@ class DeviceControlCenterSkill(NeonSkill):
             self.speak_dialog("error_ww_already_enabled",
                               {"requested_ww": matched_ww.replace("_", " ")})
             if len(enabled_ww) > 1:
-                LOG.info(f"Multiple WW active")
+                LOG.info("Multiple WW active")
                 for ww in enabled_ww:
                     if ww != matched_ww:
                         spoken_ww = ww.replace("_", " ")
@@ -262,8 +312,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                 self.speak_dialog("confirm_ww_disabled",
                                                   {"ww": spoken_ww})
                             else:
-                                pass
-                                # TODO: Speak error
+                                self._speak_disabled_ww_error(spoken_ww)
 
             return
 
@@ -297,17 +346,27 @@ class DeviceControlCenterSkill(NeonSkill):
         :param ww: string wake word to enable
         :returns: True on success, False on failure
         """
-        # This has to reload the recognizer loop, so allow more time to respond
-        resp = self.bus.wait_for_response(message.forward(
-            "neon.enable_wake_word", {"wake_word": ww}), timeout=30)
+        self.log.debug(f"Attempting to enable WW: {ww}")
+        resp = self._emit_enable_ww_message(ww, message)
         if not resp:
-            LOG.error("No response to WW enable request")
+            LOG.error(f"No response to WW enable request for {ww}!")
+            self.speak_dialog("error_ww_change_failed")
             return False
-        if resp.data.get('error'):
-            LOG.warning(f"WW enable failed with response: {resp.data}")
-            return False
+        if resp.data.get('error') == "ww not configured":
+            LOG.warning(f"WW not configured at the system level, patching: {ww}")
+            update_mycroft_config({"hotwords": {ww: {"active": True, "listen": True}}})
+            resp = self._emit_enable_ww_message(ww, message)
+            if not resp:
+                LOG.error(f"No response to WW enable request for {ww}!")
+                self.speak_dialog("error_ww_change_failed")
+                return False
+            if resp and resp.data.get("error"):
+                self.log.error(f"WW enable failed with response: {resp.data}")
+                return False
+            else:
+                self.log.debug(f"Enabled WW with response: {resp.data}")
+                return True
         return True
-
     def _disable_wake_word(self, ww: str, message: Message) -> bool:
         """
         Disable the requested wake word and return True on success
@@ -322,6 +381,7 @@ class DeviceControlCenterSkill(NeonSkill):
         if resp.data.get('error'):
             LOG.warning(f"WW disable failed with response: {resp.data}")
             return False
+        self.log.debug(f"Disabled WW: {ww}")
         return True
 
     def _do_exit_shutdown(self, action: SystemCommand):
@@ -338,3 +398,105 @@ class DeviceControlCenterSkill(NeonSkill):
         elif action == SystemCommand.RESTART:
             self.speak_dialog("confirm_restarting", private=True, wait=True)
             self.bus.emit(Message("system.reboot"))
+
+    def _disable_all_other_wake_words(self, message: Message, ww_to_keep: str) -> bool:
+        """Disable all wake words and speak confirmation.
+        :returns: True on success, False on failure
+        """
+        available_ww = self._get_wakewords()
+        if available_ww:
+            self.log.debug(f"Found available WW: {available_ww}")
+            # TODO: Identify why this doesn't grab user config
+            enabled_ww = self._get_enabled_wakewords(available_ww)
+            if enabled_ww:  # It's possible no WW are enabled
+                self.log.debug(f"Found enabled WWs: {enabled_ww}")
+                for ww in enabled_ww:
+                    if ww != ww_to_keep:
+                        spoken_ww = ww.replace("_", " ")
+                        self.log.debug(f"Disabling WW: {ww}")
+                        if self._disable_wake_word(ww, message):
+                            self.speak_dialog("confirm_ww_disabled", {"ww": spoken_ww})
+                            return True
+                        else:
+                            self._speak_disabled_ww_error(spoken_ww)
+                            return False
+        self.log.debug("No available WW found")
+        return False
+
+    def _get_wakewords(self) -> Optional[dict]:
+        """Get a dict of available configured wake words."""
+        available_ww = self.wakewords
+        if not available_ww:
+            LOG.warning("Wake Word API Not Available")
+            self.speak_dialog("error_no_ww_api")
+        return available_ww
+
+    def _get_enabled_wakewords(self, available_ww: dict) -> List[str]:
+        """Get a list of enabled wake words from the available wake words dict.
+        :returns: A list of enabled wakewords, ex ["hey_neon"]
+        """
+        return [ww for ww in available_ww.keys() if available_ww[ww].get('active')]
+
+    def _speak_disabled_ww_error(self, spoken_ww: str) -> None:
+        """Speak an error message when a wake word fails to disable."""
+        self.speak_dialog("wakeword_failed_to_disable", {"ww": spoken_ww})
+
+    def _set_mycroft_voice(self) -> None:
+        """Disable current TTS and enable mimic plugin."""
+        classic_mycroft_config = {
+            "tts": {
+                "module": "ovos-tts-plugin-mimic"
+            }
+        }
+        LOG.debug("Patching user config for Mimic Alan Pope (classic Mycroft) TTS")
+        update_mycroft_config(classic_mycroft_config, bus=self.bus)
+
+    def _set_jarvis_voice(self) -> None:
+        """Disable current TTS and enable piper plugin."""
+        jarvis_config = {
+            "tts": {
+                "module": "ovos-tts-plugin-piper",
+                "ovos-tts-plugin-piper": {"lang": "en-us", "voice": "alan-low"}
+            }
+        }
+        LOG.debug("Patching user config for Jarvis TTS")
+        update_mycroft_config(jarvis_config, bus=self.bus)
+
+    def _set_neon_voice(self) -> None:
+        """Disable current TTS and enable Coqui plugins."""
+        neon_config = {
+            "tts": {
+                "module": "neon-tts-plugin-coqui-remote",
+                "fallback_module": "coqui",
+                "neon-tts-plugin-larynx-server": {"host": "https://larynx.2022.us"},
+                "mozilla_remote": {"api_url": "https://mtts.2022.us/api/tts"},
+            }
+        }
+        LOG.debug("Patching user config for Neon TTS")
+        update_mycroft_config(neon_config, bus=self.bus)
+
+    def _set_user_tts_settings(self, persona: str):
+        """Update user ngi_user_info.yml with settings for the requested persona."""
+        LOG.debug(f"Patching user ngi config for persona {persona}")
+        user_config: Optional[NGIConfig] = self._retrieve_ngi_config()
+        if not user_config:
+            return  # Error logging already happens in method above
+        if persona == "mycroft":
+            self._write_tts_lang_and_gender(user_config=user_config, lang="en-gb", gender="male")
+        if persona == "neon":
+            self._write_tts_lang_and_gender(user_config=user_config, lang="en-us", gender="female")
+        if persona == "jarvis":
+            self._write_tts_lang_and_gender(user_config=user_config, lang="en-us", gender="male")
+        else:
+            LOG.error(f"Unknown persona requested: {persona}")
+
+    def _write_tts_lang_and_gender(self, user_config: NGIConfig, lang: str, gender: str) -> None:
+        user_config.populate(content={"speech": {"tts_language": lang, "tts_gender": gender, "secondary_tts_gender": gender}})
+        user_config.write_changes()
+
+    def _retrieve_ngi_config(self) -> Optional[NGIConfig]:
+        LOG.debug("Patching user ngi config for Neon TTS")
+        user_config = NGIConfig(name="ngi_user_info", force_reload=True)
+        if user_config is None:
+            LOG.error("No user config found! Please submit a ticket to Neon - this is unusual.")
+        return user_config
