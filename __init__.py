@@ -500,3 +500,12 @@ class DeviceControlCenterSkill(NeonSkill):
         if user_config is None:
             LOG.error("No user config found! Please submit a ticket to Neon - this is unusual.")
         return user_config
+
+    def _emit_enable_ww_message(self, ww: str, message: Message) -> Optional[Message]:
+        # This has to reload the recognizer loop, so allow more time to respond
+        resp = self.bus.wait_for_response(message.forward(
+            "neon.enable_wake_word", {"wake_word": ww}), timeout=30)
+        if not resp:
+            LOG.error(f"No response to WW enable request for {ww}!")
+            return None
+        return resp
