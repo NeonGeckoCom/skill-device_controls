@@ -644,6 +644,7 @@ class TestSkillMethods(SkillTestCase):
         self.skill.bus.once("neon.enable_wake_word", _handle_enable_ww)
         self.skill.bus.once("neon.disable_wake_word", disable_ww)
 
+        self.skill.speak_dialog.reset_mock()
         self.skill.handle_change_ww(message_change_hey_neon)
         self.skill.speak_dialog.assert_called_with("error_ww_change_failed")
         disable_ww.assert_not_called()
