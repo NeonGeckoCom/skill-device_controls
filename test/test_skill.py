@@ -1,3 +1,4 @@
+# pylint: disable=W0212,C0116,C0415,W0603
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
 # Copyright 2008-2022 Neongecko.com Inc.
@@ -644,7 +645,6 @@ class TestSkillMethods(SkillTestCase):
         self.skill.bus.once("neon.enable_wake_word", _handle_enable_ww)
         self.skill.bus.once("neon.disable_wake_word", disable_ww)
 
-        self.skill.speak_dialog.reset_mock()
         self.skill.handle_change_ww(message_change_hey_neon)
         self.skill.speak_dialog.assert_called_with("error_ww_change_failed")
         disable_ww.assert_not_called()

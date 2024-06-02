@@ -27,7 +27,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from typing import List
 from enum import Enum
-from posixpath import expanduser
+from os.path import expanduser
 from random import randint
 from typing import Optional
 
@@ -361,6 +361,7 @@ class DeviceControlCenterSkill(NeonSkill):
                 self.speak_dialog("error_ww_change_failed")
                 return False
             if resp and resp.data.get("error"):
+                self.speak_dialog("error_ww_change_failed")
                 self.log.error(f"WW enable failed with response: {resp.data}")
                 return False
             else:
@@ -507,5 +508,8 @@ class DeviceControlCenterSkill(NeonSkill):
             "neon.enable_wake_word", {"wake_word": ww}), timeout=30)
         if not resp:
             LOG.error(f"No response to WW enable request for {ww}!")
+            return None
+        if resp.data.get("error"):
+            LOG.error(f"WW enable failed with response: {resp.data}")
             return None
         return resp
