@@ -90,7 +90,6 @@ en-us:
   ironman.intent:
     - i am iron man
     - i am ironman
-    - i am iron
     - become jarvis
     - become jarbas
   become_neon.intent:

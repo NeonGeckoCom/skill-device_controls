@@ -694,6 +694,9 @@ class TestSkillMethods(SkillTestCase):
         self.skill.speak_dialog.assert_called_with("confirm_ww_disabled",
                                                    {"ww": "hey neon"})
 
+    def test_speak_restart_dialog(self):
+        # TODO: Implement test
+        pass
 
 if __name__ == '__main__':
     pytest.main()
