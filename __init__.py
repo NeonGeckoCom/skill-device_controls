@@ -54,6 +54,9 @@ class DeviceControlCenterSkill(NeonSkill):
     _pending_audio_restart = False
     _dialog_to_speak = ""
     user_config_path = expanduser("~/.config/neon/neon.yaml")
+    
+    def initialize(self):
+        self.bus.on("mycroft.ready", self._speak_restart_dialog())
 
     @classproperty
     def runtime_requirements(self):
@@ -339,6 +342,14 @@ class DeviceControlCenterSkill(NeonSkill):
 
     def stop(self):
         pass
+
+    def _speak_restart_dialog(self, message: Message):
+        """Handle speaking a confirmation dialog after a restart."""
+        if self._dialog_to_speak and self._pending_audio_restart:
+            self.log.info(f"Neon has restarted, speaking dialog {self._dialog_to_speak}")
+            self.speak_dialog(self._dialog_to_speak)
+            self._dialog_to_speak = None
+            self._pending_audio_restart = False
 
     def _enable_wake_word(self, ww: str, message: Message) -> bool:
         """
