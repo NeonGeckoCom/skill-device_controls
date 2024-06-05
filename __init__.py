@@ -54,7 +54,7 @@ class DeviceControlCenterSkill(NeonSkill):
     _pending_audio_restart = False
     _dialog_to_speak = ""
     user_config_path = expanduser("~/.config/neon/neon.yaml")
-    
+
     def initialize(self):
         self.bus.on("mycroft.ready", self._speak_restart_dialog)
 
@@ -211,6 +211,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                       {"enabled": enabled}))
         # TODO: Handle this event DM
 
+    @intent_handler("classic_mycroft.intent")
     def handle_classic_mycroft_intent(self, message):
         """
         Give the user a classic Mycroft experience.
