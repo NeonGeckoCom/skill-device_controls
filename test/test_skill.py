@@ -657,6 +657,43 @@ class TestSkillMethods(SkillTestCase):
         pass
         # TODO
 
+    def test_emit_enable_ww_message(self):
+        def _error_response(message):
+            self.skill.bus.emit(message.response({"error": True}))
+        def _success_response(message):
+            self.skill.bus.emit(message.response({}))
+        # Test no response
+        self.skill.bus.once("neon.enable_wake_word", lambda x: None)
+        resp = self.skill._emit_enable_ww_message("hey neon", Message("test"))
+        self.assertIsNone(resp)
+        # Test error response
+        self.skill.bus.once("neon.enable_wake_word", _error_response)
+        resp = self.skill._emit_enable_ww_message("hey neon", Message("test"))
+        self.assertIsNone(resp)
+        # Test success
+        self.skill.bus.once("neon.enable_wake_word", _success_response)
+        resp = self.skill._emit_enable_ww_message("hey neon", Message("test"))
+        self.assertEqual(resp.as_dict["type"], "neon.enable_wake_word.response")
+
+    def test_disable_all_other_wake_words(self):
+        # No wakewords
+        self.skill._get_wakewords = Mock(return_value={})
+        resp = self.skill._disable_all_other_wake_words(Message("test"), "hey_mycroft")
+        self.assertFalse(resp)
+        # No enabled wakewords
+        self.skill._get_wakewords = Mock(return_value={"hey_mycroft": {"active": False},
+                                                       "hey_neon": {"active": False}})
+        resp = self.skill._disable_all_other_wake_words(Message("test"), "hey_mycroft")
+        self.assertFalse(resp)
+        # Success
+        self.skill._disable_wake_word = Mock(return_value=True)
+        self.skill._get_wakewords = Mock(return_value={"hey_mycroft": {"active": False},
+                                                       "hey_neon": {"active": True}})
+        resp = self.skill._disable_all_other_wake_words(Message("test"), "hey_mycroft")
+        self.assertTrue(resp)
+        self.skill.speak_dialog.assert_called_with("confirm_ww_disabled",
+                                                   {"ww": "hey neon"})
+
 
 if __name__ == '__main__':
     pytest.main()
