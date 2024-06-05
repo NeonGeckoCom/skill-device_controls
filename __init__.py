@@ -56,7 +56,7 @@ class DeviceControlCenterSkill(NeonSkill):
     user_config_path = expanduser("~/.config/neon/neon.yaml")
     
     def initialize(self):
-        self.bus.on("mycroft.ready", self._speak_restart_dialog())
+        self.bus.on("mycroft.ready", self._speak_restart_dialog)
 
     @classproperty
     def runtime_requirements(self):
