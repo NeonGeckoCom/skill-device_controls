@@ -58,6 +58,7 @@ dialog:
   - neon_confirmation
   - wakeword_failed_to_disable
   - ask_enable
+  - confirm_change
 
 # regex entities, not necessarily filenames
 regex:

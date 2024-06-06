@@ -255,6 +255,7 @@ class DeviceControlCenterSkill(NeonSkill):
             "descriptor": "a deep retro male voice with a British accent"
             })
         if confirmation:
+            self.speak_dialog("confirm_change")
             self._set_user_tts_settings("mycroft")
             self._enable_wake_word("hey_mycroft", message)
             self._disable_all_other_wake_words(message, "hey_mycroft")
@@ -279,6 +280,7 @@ class DeviceControlCenterSkill(NeonSkill):
             "descriptor": "a professional female voice with an American accent"
             })
         if confirmation:
+            self.speak_dialog("confirm_change")
             self._set_user_tts_settings("neon")
             self._enable_wake_word("hey_neon", message)
             self._disable_all_other_wake_words(message, "hey_neon")
@@ -308,6 +310,7 @@ class DeviceControlCenterSkill(NeonSkill):
             "descriptor": "a deep male voice with a British accent, like a butler"
             })
         if confirmation:
+            self.speak_dialog("confirm_change")
             self._set_user_tts_settings("jarvis")
             self._enable_wake_word("hey_jarvis", message)
             self._disable_all_other_wake_words(message, "hey_jarvis")
