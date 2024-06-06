@@ -25,6 +25,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from tkinter import dialog
 from typing import List
 from enum import Enum
 from os.path import expanduser
@@ -51,12 +52,12 @@ class SystemCommand(Enum):
 
 
 class DeviceControlCenterSkill(NeonSkill):
-    _pending_audio_restart = False
-    _dialog_to_speak = ""
     user_config_path = expanduser("~/.config/neon/neon.yaml")
 
     def initialize(self):
         self.bus.on("mycroft.ready", self._speak_restart_dialog)
+        if self.dialog_to_speak and self.pending_audio_restart:
+            self._speak_restart_dialog(Message("neon.audio.restarted"))
 
     @classproperty
     def runtime_requirements(self):
@@ -69,6 +70,32 @@ class DeviceControlCenterSkill(NeonSkill):
                                    no_internet_fallback=True,
                                    no_network_fallback=True,
                                    no_gui_fallback=True)
+
+    @property
+    def dialog_to_speak(self):
+        """Get the dialog to speak after a restart."""
+        try:
+            return self.settings["dialog_to_speak"]
+        except KeyError:
+            self.dialog_to_speak = ""
+            return self.settings["dialog_to_speak"]
+
+    @dialog_to_speak.setter
+    def dialog_to_speak(self, value):
+        self.settings["dialog_to_speak"] = value
+
+    @property
+    def pending_audio_restart(self):
+        """Get the pending audio restart state."""
+        try:
+            return self.settings["pending_audio_restart"]
+        except KeyError:
+            self.pending_audio_restart = False
+            return self.settings["pending_audio_restart"]
+
+    @pending_audio_restart.setter
+    def pending_audio_restart(self, value):
+        self.settings["pending_audio_restart"] = value
 
     @property
     def ww_enabled(self) -> Optional[bool]:
@@ -224,8 +251,8 @@ class DeviceControlCenterSkill(NeonSkill):
         self._disable_all_other_wake_words(message, "hey_mycroft")
         self._set_mycroft_voice()
         self.bus.emit(Message(msg_type="system.mycroft.service.restart", data={"display": True}))
-        self._pending_audio_restart = True
-        self._dialog_to_speak = "mycroft_confirmation"
+        self.pending_audio_restart = True
+        self.dialog_to_speak = "mycroft_confirmation"
 
     @intent_handler("become_neon.intent")
     def handle_become_neon(self, message):
@@ -235,8 +262,8 @@ class DeviceControlCenterSkill(NeonSkill):
         self._disable_all_other_wake_words(message, "hey_neon")
         self._set_neon_voice()
         self.bus.emit(Message("system.mycroft.service.restart", data={"display": True}))
-        self._pending_audio_restart = True
-        self._dialog_to_speak = "neon_confirmation"
+        self.pending_audio_restart = True
+        self.dialog_to_speak = "neon_confirmation"
 
     @intent_handler("ironman.intent")
     def handle_ironman_intent(self, message):
@@ -251,8 +278,8 @@ class DeviceControlCenterSkill(NeonSkill):
         self._disable_all_other_wake_words(message, "hey_jarvis")
         self._set_jarvis_voice()
         self.bus.emit(Message("system.mycroft.service.restart", data={"display": True}))
-        self._pending_audio_restart = True
-        self._dialog_to_speak = "jarvis_confirmation"
+        self.pending_audio_restart = True
+        self.dialog_to_speak = "jarvis_confirmation"
 
     @intent_handler(IntentBuilder("ChangeWakeWordIntent")
                     .require("change").require("ww").optionally("rx_wakeword"))
@@ -346,11 +373,11 @@ class DeviceControlCenterSkill(NeonSkill):
 
     def _speak_restart_dialog(self, message: Message):
         """Handle speaking a confirmation dialog after a restart."""
-        if self._dialog_to_speak and self._pending_audio_restart:
-            self.log.info(f"Neon has restarted, speaking dialog {self._dialog_to_speak}")
-            self.speak_dialog(self._dialog_to_speak)
-            self._dialog_to_speak = None
-            self._pending_audio_restart = False
+        if self.dialog_to_speak and self.pending_audio_restart:
+            self.log.info(f"Neon has restarted, speaking dialog {self.dialog_to_speak}")
+            self.speak_dialog(self.dialog_to_speak)
+            self.dialog_to_speak = ""
+            self.pending_audio_restart = False
 
     def _enable_wake_word(self, ww: str, message: Message) -> bool:
         """
@@ -490,6 +517,7 @@ class DeviceControlCenterSkill(NeonSkill):
 
     def _set_user_tts_settings(self, persona: str):
         """Update user ngi_user_info.yml with settings for the requested persona."""
+        persona = persona.replace(" ", "")
         LOG.debug(f"Patching user ngi config for persona {persona}")
         user_config: Optional[NGIConfig] = self._retrieve_ngi_config()
         if not user_config:
