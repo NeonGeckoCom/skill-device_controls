@@ -25,12 +25,12 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from tkinter import dialog
-from typing import List
+import datetime
+from datetime import timedelta
 from enum import Enum
 from os.path import expanduser
 from random import randint
-from typing import Optional
+from typing import List, Optional
 
 from adapt.intent import IntentBuilder
 from neon_utils.configuration_utils import NGIConfig
@@ -246,24 +246,50 @@ class DeviceControlCenterSkill(NeonSkill):
         Uses local Mimic with the classic apope voice
         Uses precise-lite "Hey Mycroft" ww
         """
-        self._set_user_tts_settings("mycroft")
-        self._enable_wake_word("hey_mycroft", message)
-        self._disable_all_other_wake_words(message, "hey_mycroft")
-        self._set_mycroft_voice()
-        self.bus.emit(Message(msg_type="system.mycroft.service.restart", data={"display": True}))
-        self.pending_audio_restart = True
-        self.dialog_to_speak = "mycroft_confirmation"
+        self.gui.show_text(
+            "Wakeword: Hey Mycroft, Description: A Deep, Retro Male Voice With A British Accent",
+            "Switch to Classic Mycroft?"
+            )
+        confirmation = self.ask_yesno("ask_enable", data={
+            "ww": "hey my-croft",
+            "descriptor": "a deep retro male voice with a British accent"
+            })
+        if confirmation:
+            self._set_user_tts_settings("mycroft")
+            self._enable_wake_word("hey_mycroft", message)
+            self._disable_all_other_wake_words(message, "hey_mycroft")
+            self._set_mycroft_voice()
+            self.pending_audio_restart = True
+            self.dialog_to_speak = "mycroft_confirmation"
+            self.schedule_event(self._restart_services,
+                datetime.datetime.now() + timedelta(seconds=10),
+                name="restart_after_voice_change")
+        else:
+            self.speak_dialog("not_doing_anything")
 
     @intent_handler("become_neon.intent")
     def handle_become_neon(self, message):
         """Restore default wake words and voice."""
-        self._set_user_tts_settings("neon")
-        self._enable_wake_word("hey_neon", message)
-        self._disable_all_other_wake_words(message, "hey_neon")
-        self._set_neon_voice()
-        self.bus.emit(Message("system.mycroft.service.restart", data={"display": True}))
-        self.pending_audio_restart = True
-        self.dialog_to_speak = "neon_confirmation"
+        self.gui.show_text(
+            "Wakeword: Hey Neon, Description: A Professional, Female Voice With An American Accent",
+            "Switch to Neon?"
+            )
+        confirmation = self.ask_yesno("ask_enable", data={
+            "ww": "hey neon",
+            "descriptor": "a professional female voice with an American accent"
+            })
+        if confirmation:
+            self._set_user_tts_settings("neon")
+            self._enable_wake_word("hey_neon", message)
+            self._disable_all_other_wake_words(message, "hey_neon")
+            self._set_neon_voice()
+            self.pending_audio_restart = True
+            self.dialog_to_speak = "neon_confirmation"
+            self.schedule_event(self._restart_services,
+                datetime.datetime.now() + timedelta(seconds=10),
+                name="restart_after_voice_change")
+        else:
+            self.speak_dialog("not_doing_anything")
 
     @intent_handler("ironman.intent")
     def handle_ironman_intent(self, message):
@@ -273,13 +299,31 @@ class DeviceControlCenterSkill(NeonSkill):
         Uses local Piper with en-us/alan-low voice
         Uses openwakeword "Hey Jarvis" ww
         """
-        self._set_user_tts_settings("jarvis")
-        self._enable_wake_word("hey_jarvis", message)
-        self._disable_all_other_wake_words(message, "hey_jarvis")
-        self._set_jarvis_voice()
-        self.bus.emit(Message("system.mycroft.service.restart", data={"display": True}))
-        self.pending_audio_restart = True
-        self.dialog_to_speak = "jarvis_confirmation"
+        self.gui.show_text(
+            "Wakeword: Hey Jarvis, Description: A Deep, Male Voice With A British Accent, Like A Butler",
+            "Switch to The Butler?"
+            )
+        confirmation = self.ask_yesno("ask_enable", data={
+            "ww": "hey jarvis",
+            "descriptor": "a deep male voice with a British accent, like a butler"
+            })
+        if confirmation:
+            self._set_user_tts_settings("jarvis")
+            self._enable_wake_word("hey_jarvis", message)
+            self._disable_all_other_wake_words(message, "hey_jarvis")
+            self._set_jarvis_voice()
+            self.pending_audio_restart = True
+            self.dialog_to_speak = "jarvis_confirmation"
+            self.schedule_event(self._restart_services,
+                datetime.datetime.now() + timedelta(seconds=10),
+                name="restart_after_voice_change")
+        else:
+            self.speak_dialog("not_doing_anything")
+
+    def _restart_services(self):
+        self.bus.emit(
+            Message(msg_type="system.mycroft.service.restart", data={"display": True})
+            )
 
     @intent_handler(IntentBuilder("ChangeWakeWordIntent")
                     .require("change").require("ww").optionally("rx_wakeword"))

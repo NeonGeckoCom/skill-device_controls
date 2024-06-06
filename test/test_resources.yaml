@@ -57,6 +57,7 @@ dialog:
   - jarvis_confirmation
   - neon_confirmation
   - wakeword_failed_to_disable
+  - ask_enable
 
 # regex entities, not necessarily filenames
 regex:
