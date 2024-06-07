@@ -28,11 +28,9 @@
 import datetime
 from datetime import timedelta
 from enum import Enum
-from os.path import expanduser
 from random import randint
 from typing import List, Optional
 
-from adapt.intent import IntentBuilder
 from neon_utils.configuration_utils import NGIConfig
 from neon_utils.message_utils import dig_for_message
 from neon_utils.skills.neon_skill import NeonSkill
@@ -43,6 +41,7 @@ from ovos_utils import classproperty
 from ovos_utils.log import LOG
 from ovos_utils.process_utils import RuntimeRequirements
 from ovos_workshop.decorators import intent_handler
+from ovos_workshop.intents import IntentBuilder
 
 
 class SystemCommand(Enum):
@@ -52,10 +51,8 @@ class SystemCommand(Enum):
 
 
 class DeviceControlCenterSkill(NeonSkill):
-    user_config_path = expanduser("~/.config/neon/neon.yaml")
-
     def initialize(self):
-        self.bus.on("mycroft.ready", self._speak_restart_dialog)
+        self.add_event("mycroft.ready", self._speak_restart_dialog, speak_errors=False)
         if self.dialog_to_speak and self.pending_audio_restart:
             self._speak_restart_dialog(Message("neon.audio.restarted"))
 
