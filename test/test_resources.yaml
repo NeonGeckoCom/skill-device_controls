@@ -54,6 +54,7 @@ dialog:
   - confirm_ww_changing
   - ask_disable_ww
   - confirm_ww_disabled
+  - word_confirm
 
 # regex entities, not necessarily filenames
 regex:
