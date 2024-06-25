@@ -13,7 +13,7 @@ vocab:
   - "enable"
   - "exit"
   - "listening"
-  - "no"
+  - "cancel"
   - "request"
   - "restart"
   - "shutdown"

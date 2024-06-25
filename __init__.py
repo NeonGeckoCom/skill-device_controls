@@ -104,7 +104,8 @@ class DeviceControlCenterSkill(NeonSkill):
         response = self.get_response("ask_exit_shutdown",
                                      {"action": action.value,
                                       "number": confirm_number},
-                                     validator, "action_not_confirmed")
+                                     validator, "action_not_confirmed",
+                                     num_retries=3)
         LOG.info(f"Got response: {response}")
         if not response:
             self.speak_dialog("confirm_cancel", private=True)
