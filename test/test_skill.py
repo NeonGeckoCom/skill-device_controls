@@ -74,7 +74,7 @@ class TestSkillMethods(SkillTestCase):
         # Exit Confirmed
         message = Message("valid_intent", {"exit": "exit"})
 
-        def get_response(*args):
+        def get_response(*args, **kwargs):
             self.assertEqual(args[0], "ask_exit_shutdown")
             dialog = args[0]
             dialog_data = args[1]
