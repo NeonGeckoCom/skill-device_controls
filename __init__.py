@@ -105,6 +105,7 @@ class DeviceControlCenterSkill(NeonSkill):
                                      {"action": action.value,
                                       "number": confirm_number},
                                      validator, "action_not_confirmed")
+        LOG.info(f"Got response: {response}")
         if not response:
             self.speak_dialog("confirm_cancel", private=True)
         elif response:
