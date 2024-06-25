@@ -91,6 +91,8 @@ class DeviceControlCenterSkill(NeonSkill):
         :param message: message object associated with request
         """
         confirm_number = str(randint(100, 999))
+        self.gui.show_text(confirm_number,
+                           self.resources.render_dialog("word_confirm"))
         validator = numeric_confirmation_validator(confirm_number)
         if message.data.get("exit"):
             action = SystemCommand.EXIT
@@ -104,7 +106,10 @@ class DeviceControlCenterSkill(NeonSkill):
         response = self.get_response("ask_exit_shutdown",
                                      {"action": action.value,
                                       "number": confirm_number},
-                                     validator, "action_not_confirmed")
+                                     validator, "action_not_confirmed",
+                                     num_retries=3)
+        LOG.debug(f"Got response: {response}")
+        self.gui.clear()
         if not response:
             self.speak_dialog("confirm_cancel", private=True)
         elif response:
