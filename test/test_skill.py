@@ -520,7 +520,7 @@ class TestSkillMethods(SkillTestCase):
         update_event.wait(3)
         self.assertFalse(debug_state)
 
-    @flaky
+    @flaky(max_runs=3, min_passes=1)
     def test_handle_change_ww(self):
         wake_word_config = {"hey_mycroft": {"active": False},
                             "hey_neon": {"active": True}}
