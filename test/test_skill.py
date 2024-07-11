@@ -601,6 +601,7 @@ class TestSkillMethods(SkillTestCase):
 
         self.skill.handle_change_ww(message_change_hey_mycroft)
         self.assertTrue(wake_word_config['hey_mycroft']['active'])
+        print(f"Periodically failing config: {wake_word_config}")
         self.assertFalse(wake_word_config['hey_neon']['active'])
         self.skill.speak_dialog.assert_called_with("confirm_ww_changed",
                                                    {"wake_word": "hey my-croft"})
