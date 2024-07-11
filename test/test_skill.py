@@ -75,7 +75,7 @@ class TestSkillMethods(SkillTestCase):
         # Exit Confirmed
         message = Message("valid_intent", {"exit": "exit"})
 
-        def get_response(*args):
+        def get_response(*args, **kwargs):
             self.assertEqual(args[0], "ask_exit_shutdown")
             dialog = args[0]
             dialog_data = args[1]
@@ -103,7 +103,7 @@ class TestSkillMethods(SkillTestCase):
         # Shutdown confirmed
         message = Message("valid_intent", {"shutdown": "shut down"})
 
-        def get_response(*args):
+        def get_response(*args, **kwargs):
             self.assertEqual(args[0], "ask_exit_shutdown")
             dialog = args[0]
             dialog_data = args[1]
@@ -131,7 +131,7 @@ class TestSkillMethods(SkillTestCase):
         # Restart Confirmed
         message = Message("valid_intent", {"restart": "reboot"})
 
-        def get_response(*args):
+        def get_response(*args, **kwargs):
             self.assertEqual(args[0], "ask_exit_shutdown")
             dialog = args[0]
             dialog_data = args[1]
@@ -160,7 +160,7 @@ class TestSkillMethods(SkillTestCase):
         self.skill._do_exit_shutdown.reset_mock()
         message = Message("valid_intent", {"exit": "exit"})
 
-        def get_response(*args):
+        def get_response(*args, **kwargs):
             self.assertEqual(args[0], "ask_exit_shutdown")
             dialog = args[0]
             dialog_data = args[1]
@@ -187,7 +187,7 @@ class TestSkillMethods(SkillTestCase):
         # Exit no response
         message = Message("valid_intent", {"exit": "exit"})
 
-        def get_response(*args):
+        def get_response(*args, **kwargs):
             self.assertEqual(args[0], "ask_exit_shutdown")
             dialog = args[0]
             dialog_data = args[1]

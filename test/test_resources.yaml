@@ -13,7 +13,7 @@ vocab:
   - "enable"
   - "exit"
   - "listening"
-  - "no"
+  - "cancel"
   - "request"
   - "restart"
   - "shutdown"
@@ -59,6 +59,7 @@ dialog:
   - wakeword_failed_to_disable
   - ask_enable
   - confirm_change
+  - word_confirm
 
 # regex entities, not necessarily filenames
 regex:
