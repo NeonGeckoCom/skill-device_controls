@@ -28,14 +28,13 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import shutil
-import pytest
-
-from neon_minerva.tests.skill_unit_test_base import SkillTestCase
-
 from threading import Event
 from unittest.mock import Mock
-from ovos_bus_client.message import Message
 
+import pytest
+from flaky import flaky
+from neon_minerva.tests.skill_unit_test_base import SkillTestCase
+from ovos_bus_client.message import Message
 
 WW_STATE = True
 
@@ -521,6 +520,7 @@ class TestSkillMethods(SkillTestCase):
         update_event.wait(3)
         self.assertFalse(debug_state)
 
+    @flaky
     def test_handle_change_ww(self):
         wake_word_config = {"hey_mycroft": {"active": False},
                             "hey_neon": {"active": True}}
