@@ -54,6 +54,11 @@ dialog:
   - confirm_ww_changing
   - ask_disable_ww
   - confirm_ww_disabled
+  - jarvis_confirmation
+  - neon_confirmation
+  - wakeword_failed_to_disable
+  - ask_enable
+  - confirm_change
   - word_confirm
 
 # regex entities, not necessarily filenames
@@ -64,11 +69,11 @@ intents:
   padatious: []
   # Adapt intents are the name passed to the constructor
   adapt:
-    - 'ExitShutdownIntent'
-    - 'SkipWWIntent'
-    - 'SoloModeIntent'
-    - 'UseWWIntent'
-    - 'StopSoloModeIntent'
-    - 'ConfirmListeningIntent'
-    - 'ShowDebugIntent'
+    - "ExitShutdownIntent"
+    - "SkipWWIntent"
+    - "SoloModeIntent"
+    - "UseWWIntent"
+    - "StopSoloModeIntent"
+    - "ConfirmListeningIntent"
+    - "ShowDebugIntent"
     - ChangeWakeWordIntent

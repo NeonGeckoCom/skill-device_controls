@@ -22,12 +22,12 @@
 
 en-us:
   ExitShutdownIntent:
-  - I want you to exit:
-      - exit
-  - I need you to restart:
-      - restart
-  - Neon shut down please:
-      - shutdown
+    - I want you to exit:
+        - exit
+    - I need you to restart:
+        - restart
+    - Neon shut down please:
+        - shutdown
   SkipWWIntent:
     - start skipping wake words
     - skip wake words
@@ -87,15 +87,29 @@ en-us:
     - power down
     - turn off
     - power off
+  ironman.intent:
+    - i am iron man
+    - i am ironman
+    - become jarvis
+    - become jarbas
+  become_neon.intent:
+    - become neon
+  classic_mycroft.intent:
+    - become mycroft
+    - become classic mycroft
+    - become minecraft
+    - become classic minecraft
+    - become mike roft
+    - become classic mike roft
 
 uk-ua:
   ExitShutdownIntent:
-  - Я бажаю щоб ви вихід:
-      - exit: вихід
-  - Я бажаю щоб ви  перезавантажити:
-      - restart: перезавантажити
-  - Мені потрібно щоб ви зупинити:
-      - shutdown: зупинити
+    - Я бажаю щоб ви вихід:
+        - exit: вихід
+    - Я бажаю щоб ви  перезавантажити:
+        - restart: перезавантажити
+    - Мені потрібно щоб ви зупинити:
+        - shutdown: зупинити
   SkipWWIntent:
     - пропустити активуючі слова
     - пропустити слово попередження
@@ -128,7 +142,7 @@ uk-ua:
     - зупинити
   restart.intent:
     - перезавантажити
-    - рестарт 
+    - рестарт
     - перезапустити
   shutdown.intent:
     - закрити
