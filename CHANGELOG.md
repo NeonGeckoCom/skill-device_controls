@@ -1,52 +1,48 @@
 # Changelog
 
-## [1.0.1a6](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a6) (2024-04-01)
+## [1.1.1a4](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.1.1a4) (2025-03-11)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.1a5...1.0.1a6)
-
-**Merged pull requests:**
-
-- Update test dependency to stable spec [\#84](https://github.com/NeonGeckoCom/skill-device_controls/pull/84) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [1.0.1a5](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a5) (2024-02-01)
-
-[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.1a4...1.0.1a5)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.1.1a3...1.1.1a4)
 
 **Merged pull requests:**
 
-- Support ovos-utils 0.1 [\#83](https://github.com/NeonGeckoCom/skill-device_controls/pull/83) ([NeonDaniel](https://github.com/NeonDaniel))
+- Update automation, gitignore, and license notices [\#95](https://github.com/NeonGeckoCom/skill-device_controls/pull/95) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [1.0.1a4](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a4) (2023-12-19)
+## [1.1.1a3](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.1.1a3) (2024-09-13)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.1a3...1.0.1a4)
-
-**Merged pull requests:**
-
-- Update dependencies to stable versions [\#81](https://github.com/NeonGeckoCom/skill-device_controls/pull/81) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [1.0.1a3](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a3) (2023-12-19)
-
-[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.1a2...1.0.1a3)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.1.1a2...1.1.1a3)
 
 **Merged pull requests:**
 
-- Add missing uk-ua dialog files [\#82](https://github.com/NeonGeckoCom/skill-device_controls/pull/82) ([NeonDmitry](https://github.com/NeonDmitry))
+- Update OVOS dependencies to allow 0.x versions [\#94](https://github.com/NeonGeckoCom/skill-device_controls/pull/94) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [1.0.1a2](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a2) (2023-11-08)
+## [1.1.1a2](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.1.1a2) (2024-06-25)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.1a1...1.0.1a2)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.1.1a1...1.1.1a2)
+
+**Implemented enhancements:**
+
+- \[FEAT\] Provide visual help for numeric confirmations [\#78](https://github.com/NeonGeckoCom/skill-device_controls/issues/78)
+
+**Fixed bugs:**
+
+- \[BUG\]cannot perform 'dismiss' action  [\#90](https://github.com/NeonGeckoCom/skill-device_controls/issues/90)
 
 **Merged pull requests:**
 
-- Ukrainian translation [\#43](https://github.com/NeonGeckoCom/skill-device_controls/pull/43) ([NeonMariia](https://github.com/NeonMariia))
+- Fix bug in confirmation [\#91](https://github.com/NeonGeckoCom/skill-device_controls/pull/91) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [1.0.1a1](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.0.1a1) (2023-11-08)
+## [1.1.1a1](https://github.com/NeonGeckoCom/skill-device_controls/tree/1.1.1a1) (2024-05-10)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.0.0...1.0.1a1)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-device_controls/compare/1.1.0...1.1.1a1)
+
+**Implemented enhancements:**
+
+- \[FEAT\] Ukrainian Intent Tests [\#52](https://github.com/NeonGeckoCom/skill-device_controls/issues/52)
 
 **Merged pull requests:**
 
-- Update unit tests [\#80](https://github.com/NeonGeckoCom/skill-device_controls/pull/80) ([NeonDaniel](https://github.com/NeonDaniel))
+- Remove `mycroft` imports [\#86](https://github.com/NeonGeckoCom/skill-device_controls/pull/86) ([NeonDaniel](https://github.com/NeonDaniel))
 
 
 

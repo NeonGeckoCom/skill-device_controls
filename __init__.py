@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2022 Neongecko.com Inc.
+# Copyright 2008-2025 Neongecko.com Inc.
 # Contributors: Daniel McKnight, Guy Daniels, Elon Gasper, Richard Leeds,
 # Regina Bloomstine, Casimiro Ferreira, Andrii Pernatii, Kirill Hrymailo
 # BSD-3 License
@@ -28,17 +28,16 @@
 
 from typing import Optional
 from enum import Enum
-from adapt.intent import IntentBuilder
 from random import randint
-from ovos_bus_client import Message
+from ovos_bus_client.message import Message
 from ovos_utils import classproperty
 from ovos_utils.log import LOG
 from ovos_utils.process_utils import RuntimeRequirements
 from neon_utils.message_utils import dig_for_message
 from neon_utils.skills.neon_skill import NeonSkill
 from neon_utils.validator_utils import numeric_confirmation_validator
-
-from mycroft.skills import intent_handler, intent_file_handler
+from ovos_workshop.decorators import intent_handler
+from ovos_workshop.intents import IntentBuilder
 
 
 class SystemCommand(Enum):
@@ -92,6 +91,8 @@ class DeviceControlCenterSkill(NeonSkill):
         :param message: message object associated with request
         """
         confirm_number = str(randint(100, 999))
+        self.gui.show_text(confirm_number,
+                           self.resources.render_dialog("word_confirm"))
         validator = numeric_confirmation_validator(confirm_number)
         if message.data.get("exit"):
             action = SystemCommand.EXIT
@@ -105,23 +106,26 @@ class DeviceControlCenterSkill(NeonSkill):
         response = self.get_response("ask_exit_shutdown",
                                      {"action": action.value,
                                       "number": confirm_number},
-                                     validator, "action_not_confirmed")
+                                     validator, "action_not_confirmed",
+                                     num_retries=3)
+        LOG.debug(f"Got response: {response}")
+        self.gui.clear()
         if not response:
             self.speak_dialog("confirm_cancel", private=True)
         elif response:
             self._do_exit_shutdown(action)
 
-    @intent_file_handler("exit.intent")
+    @intent_handler("exit.intent")
     def handle_exit_intent(self, message):
         message.data['exit'] = True
         self.handle_exit_shutdown_intent(message)
 
-    @intent_file_handler("restart.intent")
+    @intent_handler("restart.intent")
     def handle_restart_intent(self, message):
         message.data['restart'] = True
         self.handle_exit_shutdown_intent(message)
 
-    @intent_file_handler("shutdown.intent")
+    @intent_handler("shutdown.intent")
     def handle_shutdown_intent(self, message):
         message.data['shutdown'] = True
         self.handle_exit_shutdown_intent(message)
